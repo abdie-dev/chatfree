@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Private Chat | Auto Destruction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #00ff00; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-black text-green-400 font-mono">
+
+<div x-data="chatApp()" x-init="init()" class="h-screen flex flex-col max-w-lg mx-auto bg-black border-l border-r border-green-800/30">
+    
+    <!-- HEADER -->
+    <div class="bg-gradient-to-r from-green-950/50 to-black border-b border-green-500/30 p-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <h1 class="text-sm font-bold tracking-wider">🔒 PRIVATE CHAT</h1>
+            </div>
+            <div class="text-[10px] text-green-600">AUTO DESTRUCTION</div>
+        </div>
+    </div>
+
+    <!-- MY PEER ID -->
+    <div class="bg-green-950/20 border-b border-green-500/20 px-4 py-2">
+        <div class="text-[10px] text-green-500/70">🆔 YOUR PEER ID (share this)</div>
+        <div class="text-xs font-mono break-all bg-black/50 p-2 rounded" x-text="myPeerId || 'Loading...'"></div>
+    </div>
+
+    <!-- CONNECT SECTION -->
+    <div class="bg-black/50 border-b border-green-500/20 px-4 py-3">
+        <div class="text-[10px] text-green-500/70 mb-1">🔗 CONNECT TO FRIEND</div>
+        <div class="flex gap-2">
+            <input type="text" 
+                   x-model="targetPeerId" 
+                   placeholder="Paste friend's Peer ID here"
+                   class="flex-1 bg-gray-900 border border-green-500/50 rounded-lg px-3 py-2 text-sm text-green-400 placeholder-green-800 focus:outline-none focus:border-green-500">
+            <button @click="connectToPeer()" 
+                    :disabled="!targetPeerId || connected"
+                    class="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-black font-bold px-4 py-2 rounded-lg transition text-sm">
+                CONNECT
+            </button>
+        </div>
+        <div class="text-[10px] text-green-600 mt-2" x-show="connected" x-text="'✅ Connected to: ' + friendId"></div>
+        <div class="text-[10px] text-yellow-600" x-show="!connected && myPeerId" x-text="'⏳ Waiting for friend to connect...'"></div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="relative h-0.5 bg-green-950">
+        <div class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-100" :style="{ width: destructionProgress + '%' }" x-show="destructionActive"></div>
+    </div>
+
+    <!-- MESSAGES AREA -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-2" id="messagesContainer" x-ref="messagesContainer">
+        <template x-for="msg in messages" :key="msg.id">
+            <div class="fade-in" :class="msg.destroyed ? 'opacity-40' : ''">
+                <div class="max-w-[85%] p-3 rounded-xl text-sm break-words"
+                     :class="msg.isMe ? 'bg-green-900/40 border border-green-500/50 ml-auto' : 'bg-gray-900 border border-gray-700'">
+                    <div x-text="msg.text" :class="msg.destroyed ? 'line-through italic text-gray-500' : ''"></div>
+                    <div class="text-[9px] text-green-600/70 mt-1 flex justify-between items-center gap-2">
+                        <span x-text="msg.time"></span>
+                        <template x-if="!msg.destroyed && msg.timer > 0">
+                            <span class="text-yellow-500" x-text="'💀 ' + msg.timer + 's'"></span>
+                        </template>
+                        <template x-if="!msg.destroyed && msg.timer === 0">
+                            <span class="text-red-500 text-[8px]">💀 will destroy after read</span>
+                        </template>
+                        <template x-if="msg.destroyed">
+                            <span class="text-gray-600">💀 destroyed</span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+        
+        <div x-show="messages.length === 0" class="text-center text-gray-600 text-sm py-10">
+            💀 No messages yet. Connect with someone and start chatting.
+        </div>
+    </div>
+
+    <!-- INPUT AREA -->
+    <div class="border-t border-green-500/30 bg-black/90 p-4">
+        <div class="flex gap-2">
+            <input type="text"
+                   x-model="newMessage"
+                   @keyup.enter="sendMessage()"
+                   :disabled="!connected"
+                   placeholder="Type message..."
+                   class="flex-1 bg-gray-900 border border-green-500/50 rounded-lg px-4 py-2 text-sm text-green-400 placeholder-green-800 focus:outline-none focus:border-green-500 disabled:opacity-50">
+            
+            <select x-model="selectedTimer"
+                    :disabled="!connected"
+                    class="bg-gray-900 border border-green-500/50 rounded-lg px-2 text-sm text-green-400 focus:outline-none disabled:opacity-50">
+                <option value="0">💀 After read</option>
+                <option value="5">⏱️ 5 detik</option>
+                <option value="10">⏱️ 10 detik</option>
+                <option value="15">⏱️ 15 detik</option>
+                <option value="30">⏱️ 30 detik</option>
+            </select>
+            
+            <button @click="sendMessage()"
+                    :disabled="!connected || !newMessage.trim()"
+                    class="bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-black font-bold px-4 py-2 rounded-lg transition text-sm">
+                SEND
+            </button>
+        </div>
+        
+        <div class="flex gap-3 mt-3 text-[9px] text-green-700 justify-center">
+            <span>⚠️ Messages self-destruct</span>
+            <span>🔒 End-to-end encrypted</span>
+            <span>💾 No server logs</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function chatApp() {
+    return {
+        // State
+        myPeerId: null,
+        targetPeerId: '',
+        friendId: '',
+        connected: false,
+        messages: [],
+        newMessage: '',
+        selectedTimer: '0',
+        destructionProgress: 0,
+        destructionActive: false,
+        
+        // Internal
+        peer: null,
+        conn: null,
+        messageTimers: new Map(),
+        
+        init() {
+            // Initialize PeerJS
+            this.peer = new Peer({
+                host: '0.peerjs.com',
+                port: 443,
+                secure: true,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        {
+                            urls: 'turn:openrelay.metered.ca:80',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        }
+                    ]
+                }
+            });
+            
+            this.peer.on('open', (id) => {
+                this.myPeerId = id;
+            });
+            
+            this.peer.on('connection', (conn) => {
+                this.setupConnection(conn);
+            });
+            
+            this.peer.on('error', (err) => {
+                console.error('Peer error:', err);
+                this.addSystemMessage('⚠️ Connection error: ' + err.message);
+            });
+        },
+        
+        connectToPeer() {
+            if (!this.targetPeerId || !this.peer) return;
+            
+            this.friendId = this.targetPeerId;
+            const conn = this.peer.connect(this.targetPeerId);
+            this.setupConnection(conn);
+            
+            this.addSystemMessage('🔗 Connecting to ' + this.targetPeerId + '...');
+        },
+        
+        setupConnection(conn) {
+            this.conn = conn;
+            
+            conn.on('open', () => {
+                this.connected = true;
+                this.addSystemMessage('✅ Connected securely! Start chatting.');
+            });
+            
+            conn.on('data', (data) => {
+                this.receiveMessage(data);
+            });
+            
+            conn.on('close', () => {
+                this.connected = false;
+                this.addSystemMessage('❌ Disconnected from friend');
+            });
+            
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                this.addSystemMessage('⚠️ Connection failed: ' + err.message);
+            });
+        },
+        
+        sendMessage() {
+            if (!this.connected || !this.newMessage.trim()) return;
+            
+            const text = this.newMessage.trim();
+            const timer = parseInt(this.selectedTimer);
+            const messageId = Date.now() + '_' + Math.random();
+            const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            
+            // Add to UI
+            this.messages.push({
+                id: messageId,
+                text: text,
+                isMe: true,
+                time: timeStr,
+                timer: timer,
+                destroyed: false
+            });
+            
+            this.scrollToBottom();
+            this.newMessage = '';
+            
+            // Send via P2P
+            this.conn.send({
+                type: 'message',
+                id: messageId,
+                text: text,
+                timer: timer,
+                timestamp: Date.now()
+            });
+            
+            // Start destruction timer for own message
+            if (timer > 0) {
+                this.startDestructionTimer(messageId, timer, true);
+            }
+        },
+        
+        receiveMessage(data) {
+            if (data.type === 'message') {
+                const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                
+                this.messages.push({
+                    id: data.id,
+                    text: data.text,
+                    isMe: false,
+                    time: timeStr,
+                    timer: data.timer,
+                    destroyed: false
+                });
+                
+                this.scrollToBottom();
+                
+                // Auto-destroy "after read" messages immediately
+                if (data.timer === 0) {
+                    setTimeout(() => {
+                        this.destroyMessage(data.id);
+                        if (this.conn) {
+                            this.conn.send({ type: 'destroy', id: data.id });
+                        }
+                    }, 500);
+                } else if (data.timer > 0) {
+                    this.startDestructionTimer(data.id, data.timer, false);
+                }
+            }
+            
+            if (data.type === 'destroy') {
+                this.destroyMessage(data.id);
+            }
+        },
+        
+        startDestructionTimer(messageId, seconds, isMe) {
+            let remaining = seconds;
+            
+            const interval = setInterval(() => {
+                remaining--;
+                
+                const msg = this.messages.find(m => m.id === messageId);
+                if (msg && !msg.destroyed) {
+                    msg.timer = remaining;
+                    this.messages = [...this.messages];
+                }
+                
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    this.destroyMessage(messageId);
+                    
+                    if (isMe && this.conn) {
+                        this.conn.send({ type: 'destroy', id: messageId });
+                    }
+                }
+            }, 1000);
+            
+            this.messageTimers.set(messageId, interval);
+        },
+        
+        destroyMessage(messageId) {
+            const msg = this.messages.find(m => m.id === messageId);
+            if (msg && !msg.destroyed) {
+                msg.destroyed = true;
+                msg.text = '[DESTROYED]';
+                this.messages = [...this.messages];
+                
+                if (this.messageTimers.has(messageId)) {
+                    clearInterval(this.messageTimers.get(messageId));
+                    this.messageTimers.delete(messageId);
+                }
+            }
+        },
+        
+        addSystemMessage(text) {
+            this.messages.push({
+                id: 'sys_' + Date.now(),
+                text: text,
+                isMe: false,
+                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                timer: 0,
+                destroyed: false
+            });
+            this.scrollToBottom();
+        },
+        
+        scrollToBottom() {
+            setTimeout(() => {
+                const container = this.$refs.messagesContainer;
+                if (container) container.scrollTop = container.scrollHeight;
+            }, 50);
+        }
+    }
+}
+</script>
+</body>
+</html>
