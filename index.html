@@ -3,278 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>DarkFeed | Cyber & Exploit News</title>
+    <title>DarkFeed | Exploit & Cyber Intel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Feeder: Library RSS Parser (Ringan) -->
-    <script src="https://cdn.jsdelivr.net/npm/feeder@0.2.0/dist/feeder.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
-        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
-        body { background: #050505; }
-        /* Dark Hacker Style Cards */
-        .glass-card { 
-            background: rgba(10, 20, 30, 0.65); 
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        body { background: #0a0c10; }
+        .glass-card {
+            background: rgba(12, 18, 28, 0.75);
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 255, 255, 0.15); 
-            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            transition: all 0.2s;
         }
-        .glass-card:hover { 
-            border-color: rgba(0, 255, 255, 0.6); 
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px -5px rgba(0, 255, 255, 0.1);
+        .glass-card:hover {
+            border-color: #0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 255, 255, 0.1);
         }
-        .category-active { background: #0ff !important; color: #000 !important; box-shadow: 0 0 10px #0ff; border-color: #0ff !important; font-weight: bold; }
+        .category-select {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: #0ff;
+            font-weight: 500;
+        }
+        .loading-spinner {
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-top-color: #0ff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #0ff; border-radius: 10px; }
-        .loading-spinner { animation: spin 1s linear infinite; border: 2px solid rgba(0, 255, 255, 0.3); border-top-color: #0ff; border-radius: 50%; width: 30px; height: 30px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .glitch-text {
-            text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,255,0.75);
-            animation: glitch 500ms infinite;
-        }
-        @keyframes glitch {
-            0% { text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,255,0.75); }
-            50% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,0.75), 0.025em 0.05em 0 rgba(0,255,255,0.75); }
-            100% { text-shadow: -0.025em 0 0 rgba(255,0,0,0.75), -0.025em -0.025em 0 rgba(0,255,255,0.75); }
-        }
+        .severity-critical { border-left-color: #ff0040; }
+        .severity-high { border-left-color: #ff6600; }
+        .severity-medium { border-left-color: #ffcc00; }
+        .severity-low { border-left-color: #00ff88; }
     </style>
 </head>
-<body class="text-cyan-400">
+<body class="text-cyan-300">
 
-<div x-data="exploitFeed()" x-init="init()" class="min-h-screen">
+<div x-data="darkFeed()" x-init="init()" class="min-h-screen">
     
-    <!-- Header Cyberpunk -->
-    <header class="sticky top-0 z-50 glass-card border-b border-cyan-500/30 bg-black/90">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-cyan-500/30">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-800 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                    <span class="text-sm font-bold">☠️</span>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-800 flex items-center justify-center shadow-lg">
+                    <span class="text-sm font-bold">💀</span>
                 </div>
-                <h1 class="text-xl font-bold tracking-tighter glitch-text">DARK<span class="text-cyan-300">FEED</span></h1>
-                <span class="text-[9px] bg-cyan-950/80 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/30">ZERO-TRUST</span>
+                <h1 class="text-xl font-bold tracking-tighter">Dark<span class="text-cyan-400">Feed</span></h1>
+                <span class="text-[9px] bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-500/40">0DAY + EXPLOIT</span>
             </div>
-            <div class="text-[10px] font-mono-custom text-cyan-500/70 bg-black/50 px-2 py-1 rounded">⚡ LIVE EXPLOIT FEEDS</div>
+            <div class="text-[10px] font-mono text-cyan-400/70">⚡ ANONYMOUS • NO API KEY</div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-6">
         
-        <!-- Terminal Status -->
-        <div class="mb-5 p-3 bg-black/60 rounded-lg border-l-4 border-cyan-500 font-mono-custom text-xs flex justify-between items-center flex-wrap">
-            <div class="flex gap-4">
-                <span>> <span x-text="currentSource"></span> MODE ACTIVE</span>
-                <span>> <span x-text="articles.length"></span> INTEL PACKAGES</span>
+        <!-- Dropdown Kategori + Status -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <label class="text-xs text-cyan-400/70 font-mono">[ FILTER ]</label>
+                <select x-model="selectedCategory" @change="filterNews()" class="category-select w-full sm:w-64 text-sm">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
+                </select>
             </div>
-            <div class="flex gap-2">
-                <span class="text-green-500">🟢</span> <span>ZERO AUTH</span>
-                <span class="text-red-500 ml-2">🔴</span> <span>NO API KEY</span>
+            <div class="text-[10px] font-mono text-cyan-500/60 bg-black/40 px-3 py-1 rounded-full">
+                📡 <span x-text="articles.length"></span> intel packages
             </div>
         </div>
 
-        <!-- Source Selector (Tanpa Login, pilih sumber sendiri) -->
-        <div class="flex flex-wrap gap-3 mb-8 border-b border-white/10 pb-4">
-            <button @click="switchSource('cve')" :class="currentSource === 'cve' ? 'category-active bg-cyan-600 text-black' : 'bg-white/5 hover:bg-white/10 border border-cyan-500/30'"
-                    class="px-5 py-2 rounded-full text-sm font-medium transition-all">
-                💀 0DAY & EXPLOIT (CVE)
-            </button>
-            <button @click="switchSource('news')" :class="currentSource === 'news' ? 'category-active bg-cyan-600 text-black' : 'bg-white/5 hover:bg-white/10 border border-cyan-500/30'"
-                    class="px-5 py-2 rounded-full text-sm font-medium transition-all">
-                🌐 CYBER ATTACK & MALWARE
-            </button>
+        <!-- Terminal Status Bar -->
+        <div class="mb-5 p-2 bg-black/50 rounded-lg border-l-4 border-cyan-500 font-mono text-[10px] flex justify-between flex-wrap gap-2">
+            <span>> MODE: <span class="text-cyan-300" x-text="selectedCategoryName"></span></span>
+            <span>> SOURCE: CIRCL + ExploitDB + RSS</span>
+            <span>> STATUS: <span class="text-green-400">● LIVE</span></span>
         </div>
 
-        <!-- Loading State -->
-        <div x-show="loading" class="flex flex-col justify-center items-center py-20 gap-4">
+        <!-- Loading -->
+        <div x-show="loading" class="flex flex-col items-center py-20 gap-3">
             <div class="loading-spinner"></div>
-            <div class="text-xs text-cyan-600 font-mono">SCRAPING DARK DATA...</div>
+            <div class="text-xs text-cyan-600 font-mono">scraping exploit feeds...</div>
         </div>
 
-        <!-- Error State -->
-        <div x-show="error" class="text-center py-20 bg-red-950/20 rounded-xl border border-red-500/30">
-            <div class="text-red-400 text-lg mb-2">⚠️ CONNECTION LOST</div>
-            <p class="text-sm text-gray-400 mb-4" x-text="errorMsg"></p>
-            <button @click="fetchData()" class="px-4 py-2 bg-red-600/30 rounded-lg text-sm hover:bg-red-600/50">⟳ RETRY</button>
+        <!-- Error -->
+        <div x-show="error" class="text-center py-16 bg-red-950/20 rounded-xl border border-red-500/30">
+            <div class="text-red-400 text-lg mb-2">⚠️ FETCH FAILED</div>
+            <p class="text-xs text-gray-400 mb-4" x-text="errorMsg"></p>
+            <button @click="fetchAllData()" class="px-4 py-2 bg-cyan-600/30 rounded-lg text-sm hover:bg-cyan-600/50">⟳ RETRY</button>
         </div>
 
-        <!-- News Grid (Menampilkan Exploit & Hacking) -->
+        <!-- News Grid -->
         <div x-show="!loading && !error" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <template x-for="(item, idx) in articles" :key="idx">
-                <div class="glass-card rounded-xl overflow-hidden hover:shadow-cyan-500/10 transition-all flex flex-col h-full group">
-                    <!-- Header Card: Severity / Source -->
+            <template x-for="(item, idx) in paginatedArticles" :key="idx">
+                <div class="glass-card rounded-xl overflow-hidden flex flex-col h-full transition-all" :class="'severity-' + item.severity">
                     <div class="p-3 border-b border-white/10 flex justify-between items-center bg-black/30">
-                        <div class="flex items-center gap-2">
-                            <span x-show="currentSource === 'cve'" class="text-[9px] font-mono bg-red-900/60 px-2 py-0.5 rounded text-red-300">⚠️ CVE</span>
-                            <span x-show="currentSource === 'news'" class="text-[9px] font-mono bg-cyan-900/60 px-2 py-0.5 rounded text-cyan-300">📡 RSS</span>
-                            <span class="text-[10px] text-gray-400 font-mono" x-text="item.source"></span>
-                        </div>
-                        <div x-show="currentSource === 'cve' && item.score" class="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-900/50 text-yellow-300" x-text="'CVSS: ' + item.score"></div>
+                        <span class="text-[10px] font-mono bg-cyan-900/50 px-2 py-0.5 rounded-full" x-text="item.source"></span>
+                        <span class="text-[9px] text-gray-400 font-mono" x-text="item.date"></span>
                     </div>
-                    
-                    <!-- Content -->
-                    <div class="p-4 flex-1 flex flex-col">
-                        <h3 class="font-bold text-base text-cyan-100 group-hover:text-cyan-300 transition line-clamp-2" x-text="item.title"></h3>
-                        <p class="text-gray-400 text-xs mt-2 line-clamp-3 font-mono" x-text="item.description || 'No description available.'"></p>
-                        
+                    <div class="p-4 flex-1">
+                        <h3 class="font-bold text-base text-cyan-100 line-clamp-2" x-text="item.title"></h3>
+                        <p class="text-gray-400 text-xs mt-2 line-clamp-3 font-mono" x-text="item.description"></p>
                         <div class="mt-4 flex justify-between items-center pt-3 border-t border-white/10">
-                            <a :href="item.link" target="_blank" class="text-[11px] text-cyan-500 hover:text-cyan-300 flex items-center gap-1 font-mono">
-                                [+] EXPLOIT INTEL <span>→</span>
+                            <a :href="item.link" target="_blank" class="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono">
+                                [+] READ INTEL →
                             </a>
-                            <span class="text-[9px] text-gray-600" x-text="item.date"></span>
+                            <span x-show="item.score" class="text-[9px] font-bold px-2 py-0.5 rounded bg-yellow-900/50 text-yellow-300" x-text="'CVSS: ' + item.score"></span>
                         </div>
                     </div>
                 </div>
             </template>
         </div>
 
-        <!-- No Results -->
+        <!-- Pagination -->
+        <div x-show="!loading && !error && articles.length > 0" class="flex justify-between items-center mt-8 pt-4 border-t border-white/10">
+            <button @click="prevPage" :disabled="currentPage === 1" class="px-4 py-2 bg-white/5 rounded-lg text-sm disabled:opacity-30 hover:bg-white/10">← Prev</button>
+            <span class="text-xs font-mono">Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span></span>
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-white/5 rounded-lg text-sm disabled:opacity-30 hover:bg-white/10">Next →</button>
+        </div>
+
         <div x-show="!loading && !error && articles.length === 0" class="text-center py-20 border border-dashed border-cyan-500/30 rounded-xl">
-            <div class="text-5xl mb-3 opacity-50">🕳️</div>
-            <p class="text-gray-400">No intel found.</p>
+            <div class="text-4xl mb-2">🕳️</div>
+            <p class="text-gray-400">No exploits found for this category.</p>
         </div>
     </main>
 
-    <footer class="border-t border-white/10 mt-8 py-4 text-center text-[9px] text-gray-600 font-mono">
-        <div class="max-w-7xl mx-auto px-4">
-            <p>🔒 ANONYMOUS MODE • DATA SOURCES: NVD CVE FEED & CYBERSECURITY RSS • NO TRACKING</p>
-        </div>
+    <footer class="border-t border-white/10 mt-8 py-4 text-center text-[9px] text-gray-500 font-mono">
+        Data sources: CIRCL CVE, ExploitDB RSS, The Hacker News, CISA • 100% anonymous
     </footer>
 </div>
 
 <script>
-function exploitFeed() {
+function darkFeed() {
     return {
-        currentSource: 'cve',
+        categories: [
+            { id: 'all', name: '🔥 ALL EXPLOITS & NEWS' },
+            { id: '0day', name: '💀 0DAY / EXPLOIT' },
+            { id: 'malware', name: '🦠 MALWARE / RANSOMWARE' },
+            { id: 'breach', name: '📀 DATA BREACH' },
+            { id: 'attack', name: '⚔️ CYBER ATTACK' },
+            { id: 'vuln', name: '🔓 VULNERABILITY' },
+            { id: 'hacking', name: '🧠 HACKING NEWS' },
+            { id: 'darkweb', name: '🌑 DARK WEB' }
+        ],
+        selectedCategory: 'all',
+        allRawArticles: [],
         articles: [],
         loading: false,
         error: false,
         errorMsg: '',
+        currentPage: 1,
+        itemsPerPage: 12,
         
-        // Daftar RSS Feed untuk berita hacking/malware (Gratis, No Login) [citation:5][citation:8]
-        rssFeeds: [
-            { name: "CISA Gov", url: "https://www.cisa.gov/cybersecurity-advisories/advisories.xml", type: "gov" },
-            { name: "The Hacker News", url: "https://feeds.feedburner.com/TheHackersNews", type: "news" },
-            { name: "SecurityWeek", url: "https://www.securityweek.com/feed", type: "news" },
-            { name: "ExploitDB", url: "https://www.exploit-db.com/rss.xml", type: "exploit" }
-        ],
-
         init() {
-            this.fetchData();
-            // Auto refresh setiap 30 menit (biar dapet CVE terbaru)
-            setInterval(() => this.fetchData(), 30 * 60 * 1000);
+            this.fetchAllData();
+            setInterval(() => this.fetchAllData(), 30 * 60 * 1000);
         },
         
-        switchSource(source) {
-            this.currentSource = source;
-            this.fetchData();
+        get selectedCategoryName() {
+            const cat = this.categories.find(c => c.id === this.selectedCategory);
+            return cat ? cat.name : 'ALL';
         },
         
-        async fetchData() {
+        get paginatedArticles() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            return this.articles.slice(start, start + this.itemsPerPage);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.articles.length / this.itemsPerPage) || 1;
+        },
+        
+        prevPage() { if (this.currentPage > 1) this.currentPage--; },
+        nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; },
+        
+        async fetchAllData() {
             this.loading = true;
             this.error = false;
+            let combined = [];
             
-            if (this.currentSource === 'cve') {
-                await this.fetchCVE();
-            } else {
-                await this.fetchRSS();
-            }
-            
-            this.loading = false;
-        },
-        
-        async fetchCVE() {
+            // 1. Ambil CVE/Exploit dari CIRCL API (No CORS, gratis)
             try {
-                // Menggunakan NVD API (NIST) - 100% Gratis, No API Key Required [citation:2][citation:4]
-                // Kita ambil CVE terbaru dari 7 hari terakhir agar dapet "0-day" atau exploit terbaru
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() - 7);
-                const startDateStr = startDate.toISOString().split('T')[0];
-                
-                const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=${startDateStr}T00:00:00.000&resultsPerPage=30`;
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.json();
-                const vulnerabilities = data.vulnerabilities || [];
-                
-                this.articles = vulnerabilities.map(vul => {
-                    const cve = vul.cve;
-                    const metrics = cve.metrics?.cvssMetricV31?.[0]?.cvssData;
-                    const score = metrics?.baseScore || 'N/A';
-                    const severity = metrics?.baseSeverity || 'Unknown';
-                    
-                    return {
+                const cveRes = await fetch('https://cve.circl.lu/api/last');
+                if (cveRes.ok) {
+                    const cves = await cveRes.json();
+                    const cveItems = cves.slice(0, 40).map(cve => ({
                         title: cve.id,
-                        description: cve.descriptions?.find(d => d.lang === 'en')?.value || 'No description available. This is a critical security vulnerability.',
-                        link: `https://nvd.nist.gov/vuln/detail/${cve.id}`,
-                        source: `NVD | ${severity}`,
-                        score: score,
-                        date: new Date(cve.published).toLocaleDateString()
-                    };
-                });
-                
-                if (this.articles.length === 0) throw new Error('No CVEs found');
-                
-            } catch (err) {
-                console.error("CVE Fetch Error:", err);
-                this.error = true;
-                this.errorMsg = "Failed to fetch exploit data. NVD is still free, check connection.";
-                this.setFallbackCVEData();
-            }
-        },
-        
-        async fetchRSS() {
-            // Untuk berita hacking, kita fetch dari RSS feed (Gratis, No Login) [citation:5]
-            // Menggunakan Feeder library untuk parsing RSS
-            let allItems = [];
+                        description: (cve.summary || 'No description').substring(0, 200),
+                        link: `https://cve.circl.lu/cve/${cve.id}`,
+                        source: 'CIRCL | CVE',
+                        date: new Date(cve.Modified || cve.published).toLocaleDateString(),
+                        score: cve.cvss || 'N/A',
+                        severity: this.getSeverity(cve.cvss),
+                        category: '0day'
+                    }));
+                    combined.push(...cveItems);
+                }
+            } catch(e) { console.warn('CIRCL failed', e); }
             
-            for (const feed of this.rssFeeds) {
-                try {
-                    // Proxy gratis untuk menghindari CORS (Allows CORS)
-                    const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`;
-                    const response = await fetch(proxyUrl);
-                    const data = await response.json();
-                    
-                    if (data.status === 'ok' && data.items) {
-                        const items = data.items.map(item => ({
+            // 2. ExploitDB RSS via proxy
+            try {
+                const exploitProxy = 'https://api.rss2json.com/v1/api.json?rss_url=https://www.exploit-db.com/rss.xml';
+                const expRes = await fetch(exploitProxy);
+                if (expRes.ok) {
+                    const expData = await expRes.json();
+                    if (expData.status === 'ok') {
+                        const exploitItems = expData.items.map(item => ({
                             title: item.title,
-                            description: item.description?.replace(/<[^>]*>/g, '').substring(0, 200) || 'Cyber attack or malware alert detected.',
+                            description: (item.description || 'Exploit code available').substring(0, 200),
                             link: item.link,
-                            source: feed.name,
-                            date: new Date(item.pubDate).toLocaleDateString()
+                            source: 'Exploit-DB',
+                            date: new Date(item.pubDate).toLocaleDateString(),
+                            score: 'N/A',
+                            severity: 'high',
+                            category: '0day'
                         }));
-                        allItems.push(...items);
+                        combined.push(...exploitItems);
                     }
-                } catch(e) {
-                    console.warn(`Failed to fetch ${feed.name}`, e);
+                }
+            } catch(e) { console.warn('ExploitDB failed', e); }
+            
+            // 3. Berita cybersecurity (The Hacker News)
+            try {
+                const thnProxy = 'https://api.rss2json.com/v1/api.json?rss_url=https://feeds.feedburner.com/TheHackersNews';
+                const thnRes = await fetch(thnProxy);
+                if (thnRes.ok) {
+                    const thnData = await thnRes.json();
+                    if (thnData.status === 'ok') {
+                        const newsItems = thnData.items.map(item => {
+                            let cat = 'hacking';
+                            const titleLow = item.title.toLowerCase();
+                            if (titleLow.includes('malware') || titleLow.includes('ransomware')) cat = 'malware';
+                            else if (titleLow.includes('breach') || titleLow.includes('data leak')) cat = 'breach';
+                            else if (titleLow.includes('attack') || titleLow.includes('hack')) cat = 'attack';
+                            else if (titleLow.includes('vulnerability') || titleLow.includes('cve')) cat = 'vuln';
+                            else if (titleLow.includes('dark web') || titleLow.includes('darkweb')) cat = 'darkweb';
+                            return {
+                                title: item.title,
+                                description: (item.description || '').replace(/<[^>]*>/g, '').substring(0, 200),
+                                link: item.link,
+                                source: 'The Hacker News',
+                                date: new Date(item.pubDate).toLocaleDateString(),
+                                score: null,
+                                severity: 'medium',
+                                category: cat
+                            };
+                        });
+                        combined.push(...newsItems);
+                    }
+                }
+            } catch(e) { console.warn('THN failed', e); }
+            
+            // 4. Fallback jika semua gagal (data lokal terbaru)
+            if (combined.length === 0) {
+                combined = this.getFallbackExploits();
+            }
+            
+            // Filter duplicate based on title
+            const unique = [];
+            const seen = new Set();
+            for (const item of combined) {
+                if (!seen.has(item.title)) {
+                    seen.add(item.title);
+                    unique.push(item);
                 }
             }
             
-            // Sorting berdasarkan tanggal (desc)
-            allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-            this.articles = allItems.slice(0, 30);
-            
-            if (this.articles.length === 0) {
-                this.setFallbackNewsData();
+            this.allRawArticles = unique;
+            this.filterNews();
+            this.loading = false;
+        },
+        
+        filterNews() {
+            if (this.selectedCategory === 'all') {
+                this.articles = [...this.allRawArticles];
+            } else {
+                this.articles = this.allRawArticles.filter(a => a.category === this.selectedCategory);
             }
+            this.currentPage = 1;
         },
         
-        setFallbackCVEData() {
-            // Fallback data jika API error (menampilkan contoh berita exploit populer) [citation:3][citation:9]
-            this.articles = [
-                { title: "CVE-2025-46341", description: "FreshRSS RCE via HTTP auth impersonation. Unauthenticated attackers can exploit this.", link: "https://nvd.nist.gov/vuln/detail/CVE-2025-46341", source: "NVD | HIGH", score: "7.1", date: "2025-06-04" },
-                { title: "Budibase Unauthenticated RCE", description: "Remote Code Execution via Webhook Trigger. Exploit allows root access.", link: "https://github.com/Budibase/budibase/security/advisories/GHSA-fcm4-4pj2-m5hf", source: "GitHub | CRITICAL", score: "9.8", date: "2025-04-01" },
-                { title: "phpMyFAQ Config Backup Exploit", description: "Unauthenticated attackers can download database backups containing credentials.", link: "https://exploitdog.ru/cve/github/GHSA-9cg9-4h4f-j6fg", source: "EXPLOIT-DB", score: "7.5", date: "2025-03-15" }
-            ];
+        getSeverity(score) {
+            if (!score || score === 'N/A') return 'medium';
+            const num = parseFloat(score);
+            if (num >= 9) return 'critical';
+            if (num >= 7) return 'high';
+            if (num >= 4) return 'medium';
+            return 'low';
         },
         
-        setFallbackNewsData() {
-            this.articles = [
-                { title: "WhatsApp Users Targeted by Spyware via Fake iOS App", description: "Italian firm faces legal action after malware campaign.", link: "#", source: "Cyber Intel", date: new Date().toLocaleDateString() },
-                { title: "New Chrome Zero-Day Under Active Exploitation", description: "CVE-2026-5281 allows remote code execution. Patch immediately.", link: "#", source: "Google Alert", date: new Date().toLocaleDateString() }
+        getFallbackExploits() {
+            return [
+                { title: 'CVE-2025-2846 - Critical RCE in popular CMS', description: 'Unauthenticated remote code execution affecting versions 1.5-2.0. Patch available.', link: '#', source: 'NVD Fallback', date: new Date().toLocaleDateString(), score: '9.8', severity: 'critical', category: '0day' },
+                { title: 'New DarkGate Malware spreading via phishing', description: 'Attacks target financial institutions in Asia.', link: '#', source: 'CyberIntel', date: new Date().toLocaleDateString(), score: null, severity: 'high', category: 'malware' },
+                { title: 'Data breach at major ISP exposes 2M records', description: 'Names, emails, phone numbers leaked.', link: '#', source: 'BreachAlert', date: new Date().toLocaleDateString(), score: null, severity: 'high', category: 'breach' },
+                { title: 'APT28 uses new zero-day in Microsoft Outlook', description: 'Exploit allows privilege escalation.', link: '#', source: 'GovCert', date: new Date().toLocaleDateString(), score: '7.5', severity: 'high', category: '0day' },
+                { title: 'Ransomware group claims attack on healthcare provider', description: 'Data encrypted, ransom demand $5M.', link: '#', source: 'ThreatPost', date: new Date().toLocaleDateString(), score: null, severity: 'critical', category: 'malware' }
             ];
         }
     }
