@@ -1,561 +1,440 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>0xENIGMA // GHOST ROOM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --c-bg: #030508;
-      --c-surface: #080d14;
-      --c-border: #0f2a1a;
-      --c-border-bright: #0d4a2a;
-      --c-green: #00ff6a;
-      --c-green-dim: #00cc55;
-      --c-green-ghost: rgba(0,255,106,0.06);
-      --c-green-glow: rgba(0,255,106,0.3);
-      --c-red: #ff2244;
-      --c-amber: #ffb300;
-      --c-text: #a8c4a8;
-      --c-text-dim: #3a5a3a;
-      --c-muted: #1e3a1e;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      background: var(--c-bg);
-      color: var(--c-text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    /* CRT SCANLINES */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.15) 2px,
-        rgba(0,0,0,0.15) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* NOISE GRAIN */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      opacity: 0.4;
-      pointer-events: none;
-      z-index: 9998;
-    }
-
-    .font-mono-title { font-family: 'Orbitron', sans-serif; }
-    .font-mono-code { font-family: 'Share Tech Mono', monospace; }
-    .font-mono-body { font-family: 'JetBrains Mono', monospace; }
-
-    /* GRID BG */
-    .grid-bg {
-      background-image:
-        linear-gradient(rgba(0,255,106,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,106,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
-
-    /* TERMINAL BORDER */
-    .t-border {
-      border: 1px solid var(--c-border);
-      position: relative;
-    }
-    .t-border::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      border: 1px solid var(--c-border-bright);
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .t-border:hover::before { opacity: 1; }
-
-    /* CORNER DECORATIONS */
-    .corner-tl::before, .corner-tl::after,
-    .corner-br::before, .corner-br::after {
-      content: '';
-      position: absolute;
-      width: 12px;
-      height: 12px;
-    }
-    .corner-tl::before {
-      top: -1px; left: -1px;
-      border-top: 2px solid var(--c-green);
-      border-left: 2px solid var(--c-green);
-    }
-    .corner-br::after {
-      bottom: -1px; right: -1px;
-      border-bottom: 2px solid var(--c-green);
-      border-right: 2px solid var(--c-green);
-    }
-
-    /* GLOW TEXT */
-    .glow {
-      color: var(--c-green);
-      text-shadow: 0 0 10px var(--c-green-glow), 0 0 30px rgba(0,255,106,0.15);
-    }
-    .glow-soft { color: var(--c-green); text-shadow: 0 0 8px rgba(0,255,106,0.4); }
-    .glow-dim { color: var(--c-green-dim); }
-
-    /* BUTTON */
-    .btn-ghost {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border: 1px solid var(--c-green-dim);
-      background: var(--c-green-ghost);
-      color: var(--c-green);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.1em;
-      cursor: pointer;
-      transition: all 0.15s;
-      text-transform: uppercase;
-      position: relative;
-      overflow: hidden;
-    }
-    .btn-ghost::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--c-green);
-      transform: translateX(-101%);
-      transition: transform 0.2s;
-      z-index: 0;
-    }
-    .btn-ghost:hover::before { transform: translateX(0); }
-    .btn-ghost:hover { color: #000; border-color: var(--c-green); }
-    .btn-ghost span { position: relative; z-index: 1; }
-
-    .btn-danger {
-      border-color: var(--c-red);
-      color: var(--c-red);
-      background: rgba(255,34,68,0.05);
-    }
-    .btn-danger::before { background: var(--c-red); }
-    .btn-danger:hover { color: #000; border-color: var(--c-red); }
-
-    /* INPUT */
-    .t-input {
-      background: rgba(0,255,106,0.03);
-      border: 1px solid var(--c-border-bright);
-      color: var(--c-green);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 15px;
-      padding: 10px 14px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      width: 100%;
-      letter-spacing: 0.2em;
-    }
-    .t-input::placeholder { color: var(--c-text-dim); letter-spacing: 0.1em; font-size: 12px; }
-    .t-input:focus {
-      border-color: var(--c-green);
-      box-shadow: 0 0 0 1px var(--c-green), 0 0 15px rgba(0,255,106,0.1);
-    }
-
-    /* LABEL */
-    .t-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      color: var(--c-text-dim);
-    }
-
-    /* HEADER BAR */
-    .header-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      background: rgba(0,255,106,0.03);
-      border-bottom: 1px solid var(--c-border);
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; }
-
-    /* MESSAGES AREA */
-    #messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      scroll-behavior: smooth;
-    }
-    #messages-container::-webkit-scrollbar { width: 3px; }
-    #messages-container::-webkit-scrollbar-track { background: transparent; }
-    #messages-container::-webkit-scrollbar-thumb { background: var(--c-border-bright); }
-
-    /* MESSAGE BUBBLE */
-    .msg-mine {
-      align-self: flex-end;
-      background: rgba(0,255,106,0.07);
-      border: 1px solid rgba(0,255,106,0.2);
-      border-right: 3px solid var(--c-green);
-      padding: 8px 12px;
-      max-width: 75%;
-      position: relative;
-    }
-    .msg-other {
-      align-self: flex-start;
-      background: rgba(0,0,0,0.4);
-      border: 1px solid var(--c-border-bright);
-      border-left: 3px solid var(--c-text-dim);
-      padding: 8px 12px;
-      max-width: 75%;
-    }
-    .msg-system {
-      align-self: center;
-      color: var(--c-text-dim);
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border: 1px solid var(--c-border);
-    }
-    .msg-text {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      color: var(--c-text);
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    .msg-mine .msg-text { color: rgba(0,255,106,0.9); }
-    .msg-time {
-      font-size: 9px;
-      color: var(--c-text-dim);
-      margin-top: 4px;
-      text-align: right;
-      letter-spacing: 0.05em;
-    }
-
-    /* TYPING INDICATOR */
-    .typing-dots span {
-      display: inline-block;
-      width: 4px; height: 4px;
-      background: var(--c-green);
-      border-radius: 50%;
-      animation: blink 1.2s infinite;
-    }
-    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes blink {
-      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-      40% { opacity: 1; transform: scale(1); }
-    }
-
-    /* ROOM CODE DISPLAY */
-    .room-code-display {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: 0.5em;
-      color: var(--c-green);
-      text-shadow: 0 0 20px var(--c-green-glow), 0 0 60px rgba(0,255,106,0.1);
-      text-align: center;
-    }
-
-    /* STATUS BADGE */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 3px 10px;
-      border: 1px solid;
-    }
-    .status-online { color: var(--c-green); border-color: rgba(0,255,106,0.3); background: rgba(0,255,106,0.05); }
-    .status-pulse {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--c-green);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,106,0.4); }
-      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,255,106,0); }
-    }
-
-    /* SCREENSHOT FLASH */
-    .screenshot-flash {
-      position: fixed;
-      inset: 0;
-      background: rgba(255, 0, 68, 0.7);
-      z-index: 99999;
-      pointer-events: none;
-      animation: flashFade 0.25s ease-out forwards;
-    }
-    @keyframes flashFade {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-
-    /* GLITCH TEXT */
-    .glitch {
-      position: relative;
-    }
-    .glitch::before, .glitch::after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-    }
-    .glitch::before {
-      color: #ff2244;
-      clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
-      transform: translateX(-2px);
-      animation: glitch1 4s infinite;
-    }
-    .glitch::after {
-      color: #00ffe0;
-      clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
-      transform: translateX(2px);
-      animation: glitch2 4s infinite;
-    }
-    @keyframes glitch1 {
-      0%, 95%, 100% { opacity: 0; }
-      96% { opacity: 1; transform: translateX(-3px) skewX(-2deg); }
-      97% { opacity: 0; }
-      98% { opacity: 1; transform: translateX(2px); }
-    }
-    @keyframes glitch2 {
-      0%, 94%, 100% { opacity: 0; }
-      95% { opacity: 1; transform: translateX(3px) skewX(1deg); }
-      96% { opacity: 0; }
-      97% { opacity: 1; transform: translateX(-1px); }
-    }
-
-    /* ANIMATE IN */
-    .fade-up {
-      animation: fadeUp 0.5s ease forwards;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* CURSOR BLINK */
-    .cursor-blink::after {
-      content: '\u2588';
-      animation: cursorBlink 1s step-end infinite;
-    }
-    @keyframes cursorBlink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    /* SCAN LINE ANIMATION ON CONNECT */
-    .scan-line {
-      position: absolute;
-      left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--c-green), transparent);
-      animation: scanDown 2s ease-in-out forwards;
-      pointer-events: none;
-    }
-    @keyframes scanDown {
-      0% { top: 0; opacity: 1; }
-      100% { top: 100%; opacity: 0; }
-    }
-
-    /* LOADING BARS */
-    .loading-bar {
-      height: 2px;
-      background: var(--c-border);
-      overflow: hidden;
-      position: relative;
-    }
-    .loading-bar::after {
-      content: '';
-      position: absolute;
-      left: -30%;
-      top: 0;
-      width: 30%;
-      height: 100%;
-      background: var(--c-green);
-      animation: loadingAnim 1.2s ease-in-out infinite;
-    }
-    @keyframes loadingAnim {
-      0% { left: -30%; }
-      100% { left: 130%; }
-    }
-
-    /* SECTION DIVIDER */
-    .hex-divider {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--c-text-dim);
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-    }
-    .hex-divider::before, .hex-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--c-border-bright));
-    }
-    .hex-divider::after { background: linear-gradient(90deg, var(--c-border-bright), transparent); }
-
-    /* NOTIFY TOAST */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      padding: 10px 16px;
-      border: 1px solid var(--c-green-dim);
-      background: var(--c-surface);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--c-green);
-      z-index: 10000;
-      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes toastOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-
-    /* SCROLLBAR GLOBAL */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--c-border-bright); }
-
-    /* TAG BADGE */
-    .tag {
-      font-size: 9px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border: 1px solid;
-    }
-    .tag-host { color: var(--c-amber); border-color: rgba(255,179,0,0.4); background: rgba(255,179,0,0.06); }
-    .tag-guest { color: var(--c-text-dim); border-color: var(--c-border-bright); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BIWWDEV | 3D Portfolio</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Aesthetic & Professional -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        /* Custom CSS - Time Travel Warp Effects & Typography */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0A0A0F;
+            overflow-x: hidden;
+        }
+        
+        h1, h2, h3, .font-display {
+            font-family: 'Space Grotesk', monospace;
+        }
+        
+        /* Scroll Snap */
+        .scroll-container {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            height: 100vh;
+            scroll-behavior: smooth;
+        }
+        
+        /* Time Travel Sections */
+        .time-section {
+            scroll-snap-align: start;
+            opacity: 0;
+            transform: scale(0.85) translateY(50px);
+            filter: blur(12px);
+            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+            will-change: transform, opacity, filter;
+        }
+        
+        .time-section.warp-active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            filter: blur(0);
+        }
+        
+        /* Warp Flash Animation */
+        @keyframes warpFlash {
+            0% {
+                opacity: 0;
+                transform: scale(0.7) rotateX(45deg);
+                filter: blur(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateX(0);
+                filter: blur(0);
+            }
+        }
+        
+        .warp-flash {
+            animation: warpFlash 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.2) forwards;
+        }
+        
+        /* Skill Tags Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .skill-tag {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .skill-tag:nth-child(even) {
+            animation-delay: 1.5s;
+        }
+        
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(15, 25, 35, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-5px);
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA 0%, #A855F7 50%, #EC4899 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% 200%;
+            animation: gradientShift 5s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1A1A2E;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #3B82F6;
+            border-radius: 10px;
+        }
+        
+        /* Canvas positioning */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* Content layer */
+        .content-layer {
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Typing cursor effect */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
 </head>
+<body>
 
-<body class="grid-bg" x-data="ghostRoom()" x-init="init()" @keyup.window="detectScreenshot($event)" @visibilitychange.window="handleVisibility()">
-
-  <!-- SCREENSHOT FLASH OVERLAY -->
-  <div x-show="screenshotFlash" x-cloak class="screenshot-flash" @animationend="screenshotFlash = false"></div>
-
-  <!-- TOAST NOTIFICATION -->
-  <template x-if="toast.show">
-    <div class="toast" x-text="toast.msg"></div>
-  </template>
-
-  <!-- MAIN LAYOUT -->
-  <div class="flex flex-col h-screen">
-
-    <!-- TOP BAR -->
-    <div class="header-bar flex-shrink-0 justify-between" style="border-bottom: 1px solid var(--c-border);">
-      <div class="flex items-center gap-3">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
-        <span class="font-mono-title text-xs glow ml-2" style="letter-spacing:0.3em;">0xENIGMA</span>
-        <span class="t-label">//</span>
-        <span class="t-label">GHOST ROOM</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <template x-if="inRoom">
-          <div class="status-badge status-online">
-            <span class="status-pulse"></span>
-            <span x-text="'LIVE \u00b7 ' + (connectedCount + 1) + (isHost ? ' NODES' : ' NODES')"></span>
-          </div>
-        </template>
-        <template x-if="!inRoom">
-          <div class="t-label">NO ACTIVE SESSION</div>
-        </template>
-        <!-- Encryption indicator -->
-        <div class="flex items-center gap-1" style="opacity:0.5;">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <span class="t-label" style="font-size:9px;">E2E</span>
+<!-- Alpine.js Main Component -->
+<div x-data="portfolio()" x-init="initThree(); initObserver();" class="relative">
+    
+    <!-- Canvas for Three.js -->
+    <canvas id="bgCanvas"></canvas>
+    
+    <!-- Main Content Layer -->
+    <div class="content-layer relative z-10">
+        
+        <!-- Scroll Container with Snap -->
+        <div class="scroll-container h-screen overflow-y-auto" x-ref="scrollContainer">
+            
+            <!-- ==================== SECTION 1: HERO ==================== -->
+            <section x-data="{ active: false }" 
+                     x-intersect:enter="active = true; $dispatch('section-change', 'hero')" 
+                     x-intersect:leave="active = false"
+                     :class="active ? 'warp-active' : ''"
+                     class="time-section min-h-screen flex items-center justify-center px-6">
+                <div class="text-center max-w-4xl mx-auto">
+                    <div class="mb-6 inline-block">
+                        <div class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto border border-blue-500/50">
+                            <span class="text-4xl">⚡</span>
+                        </div>
+                    </div>
+                    <h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-4">
+                        <span class="gradient-text">BIWWDEV</span>
+                    </h1>
+                    <div class="text-xl md:text-2xl text-slate-300 mb-6 font-light">
+                        <span class="typing-cursor">Unlimited Skill • Infinite Creation</span>
+                    </div>
+                    <p class="text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
+                        Pushing boundaries beyond limits. Creating digital experiences that transcend reality.
+                    </p>
+                    <div class="mt-8 flex gap-4 justify-center">
+                        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                        <div class="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 rounded-full bg-pink-500 animate-pulse" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ==================== SECTION 2: EDUCATION ==================== -->
+            <section x-data="{ active: false }" 
+                     x-intersect:enter="active = true; $dispatch('section-change', 'education')" 
+                     x-intersect:leave="active = false"
+                     :class="active ? 'warp-active' : ''"
+                     class="time-section min-h-screen flex items-center justify-center px-6">
+                <div class="text-center max-w-3xl mx-auto">
+                    <p class="text-xs uppercase tracking-[0.3em] text-blue-400 mb-4 font-semibold">Education</p>
+                    <h2 class="text-4xl md:text-7xl font-bold text-white mb-6">SMKN 1 CIANJUR</h2>
+                    <div class="w-24 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-8"></div>
+                    <p class="text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed">
+                        Mengasah skill dan kreativitas di bidang teknologi, 
+                        membangun fondasi yang kuat untuk masa depan digital.
+                    </p>
+                    <div class="mt-10 flex justify-center gap-3 flex-wrap">
+                        <span class="px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full text-sm text-blue-300">🎓 2024</span>
+                        <span class="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm text-purple-300">⚡ RPL</span>
+                        <span class="px-4 py-2 bg-pink-500/10 border border-pink-500/30 rounded-full text-sm text-pink-300">🚀 Berprestasi</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ==================== SECTION 3: UNLIMITED SKILLS ==================== -->
+            <section x-data="{ active: false }" 
+                     x-intersect:enter="active = true; $dispatch('section-change', 'skills')" 
+                     x-intersect:leave="active = false"
+                     :class="active ? 'warp-active' : ''"
+                     class="time-section min-h-screen flex items-center justify-center px-6">
+                <div class="text-center max-w-5xl mx-auto">
+                    <div class="text-8xl md:text-9xl mb-6 opacity-80">∞</div>
+                    <h2 class="text-3xl md:text-5xl font-bold gradient-text mb-8">SKILLS: UNLIMITED</h2>
+                    <p class="text-slate-400 mb-10 max-w-2xl mx-auto">
+                        Tidak terbatas, terus berkembang, dan selalu belajar hal baru.
+                        Setiap hari adalah kesempatan untuk menguasai teknologi baru.
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+                        <template x-for="(skill, idx) in skills" :key="idx">
+                            <span class="skill-tag px-5 py-2.5 bg-white/5 border border-blue-500/30 rounded-full text-sm text-slate-300 hover:border-blue-500 transition-all duration-300 cursor-pointer"
+                                  :style="`animation-delay: ${idx * 0.1}s`">
+                                ◉ <span x-text="skill"></span>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ==================== SECTION 4: PROJECTS ==================== -->
+            <section x-data="{ active: false }" 
+                     x-intersect:enter="active = true; $dispatch('section-change', 'projects')" 
+                     x-intersect:leave="active = false"
+                     :class="active ? 'warp-active' : ''"
+                     class="time-section min-h-screen flex items-center justify-center px-6 py-20">
+                <div class="max-w-6xl mx-auto">
+                    <h2 class="text-3xl md:text-5xl font-bold text-center mb-4 gradient-text">Featured Works</h2>
+                    <p class="text-slate-400 text-center mb-12">Beberapa project yang pernah dibuat</p>
+                    
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <template x-for="(project, idx) in projects" :key="idx">
+                            <div class="glass-card rounded-2xl p-6 cursor-pointer group">
+                                <div class="text-4xl mb-4" x-text="project.icon"></div>
+                                <h3 class="text-xl font-bold text-white mb-2" x-text="project.title"></h3>
+                                <p class="text-slate-400 text-sm mb-4" x-text="project.desc"></p>
+                                <div class="flex gap-2 flex-wrap">
+                                    <template x-for="tech in project.tech">
+                                        <span class="text-[10px] px-2 py-1 bg-blue-500/20 rounded-full text-blue-300" x-text="tech"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- ==================== SECTION 5: CONTACT ==================== -->
+            <section x-data="{ active: false }" 
+                     x-intersect:enter="active = true; $dispatch('section-change', 'contact')" 
+                     x-intersect:leave="active = false"
+                     :class="active ? 'warp-active' : ''"
+                     class="time-section min-h-screen flex items-center justify-center px-6">
+                <div class="text-center max-w-2xl mx-auto">
+                    <div class="text-6xl mb-6">🚀</div>
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6 gradient-text">Let's Create Together</h2>
+                    <p class="text-slate-300 mb-8 leading-relaxed">
+                        Punya project menarik? Butuh developer dengan skill unlimited? 
+                        Siap berkolaborasi dan menciptakan sesuatu yang luar biasa.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="#" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-full text-white font-medium transition-all duration-300 shadow-lg shadow-blue-500/25">
+                            📧 biwwdev@works.id
+                        </a>
+                        <a href="#" class="px-8 py-3 bg-white/5 hover:bg-white/10 border border-blue-500/30 rounded-full text-slate-300 font-medium transition-all duration-300">
+                            💬 Discord: biwwdev
+                        </a>
+                    </div>
+                    
+                    <div class="mt-12 pt-8 border-t border-white/10">
+                        <p class="text-slate-500 text-sm">© 2026 BIWWDEV • Unlimited Power</p>
+                    </div>
+                </div>
+            </section>
+            
         </div>
-      </div>
     </div>
+</div>
 
-    <!-- PRE-ROOM SCREEN -->
-    <div x-show="!inRoom && !connecting" class="flex flex-col flex-1 items-center justify-center p-6 fade-up">
-
-      <!-- LOGO SECTION -->
-      <div class="mb-10 text-center">
-        <div class="relative inline-block">
-          <div class="font-mono-title glitch glow" data-text="GHOST ROOM" style="font-size:clamp(28px,5vw,52px); font-weight:900; letter-spacing:0.25em;">GHOST ROOM</div>
-        </div>
-        <div class="t-label mt-2" style="letter-spacing:0.3em;">EPHEMERAL \u00b7 ENCRYPTED \u00b7 UNTRACEABLE</div>
-
-        <!-- Hex decorations -->
-        <div class="flex items-center justify-center gap-2 mt-3" style="color: var(--c-text-dim); font-size:10px; letter-spacing:0.15em;">
-          <span>[ WEBRTC P2P ]</span>
-          <span>\u00b7</span>
-          <span>[ NO LOGS ]</span>
-          <span>\u00b7</span>
-          <span>[ NO DB ]</span>
-        </div>
-      </div>
-
-      <!-- PEER STATUS -->
-      <div class="mb-8 flex items-center gap-2" style="font-size:11px; color:var(--c-text-dim);">
-        <template x-if="!peerReady">
-          <div class="loading-bar w-24"></div>
-        </template>
-        <template x-if="peerReady">
-          <div class="flex items-center gap-2" style="color:var(--c-green);">
-            <span class="status-pulse"></span>
-            <span class="t-label">PEER NETWORK READY</span>
-          </div>
-        </template>
-        <template x-if="!peerReady">
-          <span class="t-label">INITIALIZING PEER NETWORK...</span>
-        </template>
-      </div>
-
-      <!-- MAIN PANEL -->
-      <div class="w-full max-w-md t-border corner-tl corner-br" style="background: var(--c-surface);">
-
-        <!-- Tab bar -->
-        <div class="flex" style="border-bottom:1px solid var(--c-border);">
-          <button
-            @click="activeTab = 'create'"
-            class="flex-1 py-3 font-mono-body transition-all"
-            style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; border: none; cursor:pointer;"
-            :style="activeTab === 'create' ? 'background: rgba(0,255,106,0.06); color: var(--c-green); border-bottom: 2px solid var(--c-green);' : 'background:transparent; color: var(--c-text-dim); border-bottom: 2px solid transparent;'"
-          >[
+<script>
+function portfolio() {
+    return {
+        // State
+        skills: ['JavaScript', 'Python', 'React.js', 'Node.js', 'Three.js', 'Tailwind', 'Alpine.js', 'WebGL', 'TypeScript', 'Next.js', 'Vue.js', 'PHP', 'Laravel', 'MongoDB', 'Firebase', 'Docker', 'Git', 'UI/UX Design', 'Animation', 'AI Integration'],
+        
+        projects: [
+            { icon: '🎮', title: '3D Interactive World', desc: 'Pengalaman interaktif 3D dengan Three.js', tech: ['Three.js', 'WebGL', 'GSAP'] },
+            { icon: '💬', title: 'Ghost Chat P2P', desc: 'Aplikasi chat private end-to-end tanpa server', tech: ['PeerJS', 'WebRTC', 'Alpine'] },
+            { icon: '🎨', title: 'Creative Portfolio', desc: 'Portfolio dengan animasi scroll time travel', tech: ['Tailwind', 'Three.js', 'Alpine'] },
+            { icon: '📱', title: 'Mobile App', desc: 'Aplikasi mobile hybrid dengan performa tinggi', tech: ['React Native', 'Firebase', 'Redux'] },
+            { icon: '⚡', title: 'Real-time Dashboard', desc: 'Dashboard analytics real-time', tech: ['Node.js', 'Socket.io', 'Chart.js'] },
+            { icon: '🔒', title: 'Security Tools', desc: 'Tools untuk penetration testing', tech: ['Python', 'Bash', 'Crypto'] }
+        ],
+        
+        // Three.js references
+        scene: null,
+        camera: null,
+        renderer: null,
+        cube: null,
+        particles: null,
+        mouseX: 0,
+        mouseY: 0,
+        targetRotX: 0,
+        targetRotY: 0,
+        
+        // Scroll Observer
+        observer: null,
+        
+        initThree() {
+            // Setup scene with transparent background
+            this.scene = new THREE.Scene();
+            this.scene.background = null;
+            
+            // Camera
+            this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            this.camera.position.set(0, 0, 6);
+            
+            // Renderer with transparency
+            this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setClearColor(0x000000, 0);
+            document.getElementById('bgCanvas').appendChild(this.renderer.domElement);
+            
+            // Create Transparent Blue Cubic
+            const geometry = new THREE.BoxGeometry(2.2, 2.2, 2.2);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x3b82f6,
+                emissive: 0x1e3a8a,
+                transparent: true,
+                opacity: 0.3,
+                metalness: 0.8,
+                roughness: 0.2,
+                emissiveIntensity: 0.6
+            });
+            this.cube = new THREE.Mesh(geometry, material);
+            
+            // Add wireframe edges
+            const edgesGeo = new THREE.EdgesGeometry(geometry);
+            const edgesMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
+            const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
+            this.cube.add(wireframe);
+            
+            // Inner smaller cube for depth
+            const innerGeo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+            const innerMat = new THREE.MeshStandardMaterial({
+                color: 0x8b5cf6,
+                emissive: 0x4c1d95,
+                transparent: true,
+                opacity: 0.4,
+                wireframe: true
+            });
+            const innerCube = new THREE.Mesh(innerGeo, innerMat);
+            this.cube.add(innerCube);
+            
+            this.scene.add(this.cube);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            const pointLight1 = new THREE.PointLight(0xffffff, 1);
+            pointLight1.position.set(3, 3, 4);
+            const pointLight2 = new THREE.PointLight(0x3b82f6, 0.5);
+            pointLight2.position.set(-2, 1, 3);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 2, 1);
+            
+            this.scene.add(ambientLight, pointLight1, pointLight2, directionalLight);
+            
+            // Particle system (floating stars)
+            const particleCount = 1200;
+            const particlesGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                // Spread particles in a sphere-like volume
+                positions[i*3] = (Math.random() - 0.5) * 25;
+                positions[i*3+1] = (Math.random() - 0.5) * 15;
+                positions[i*3+2] = (Math.random() - 0.5) * 20 - 5;
+                
+                // Colors: blue, purple, cyan variations
+                const colorChoice = Math.random();
+                if (colorChoice < 0.33) {
+                    colors[i*3] = 0.2;
+                    colors[i*3+1] = 0.5;
+                    colors[i*3+2] = 1;
+                } else if (colorChoice < 0.66) {
+                    colors[i*3] = 0.6;
+                    colors[i*3+1] = 0.3;
+                    colors[i*3+2] = 1;
+                } else {
+                    colors[i*3] = 0.3;
+                    colors[i*3+1] = 0.8;
+                    colors[i*3+2] = 1;
+                }
+            }
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const particlesMat = new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.6 });
+            this.particles = new THREE.Points(particlesGeo, particlesMat);
+            this.scene.add(this.particles);
+            
+            // Mouse move handler
+            window.addEventListener('mousemove', (e) => {
+                this.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+  
