@@ -361,4 +361,16 @@ function commandCenter() {
             };
             reader.readAsText(file);
             event.target.value = '';
-      
+        },
+        
+        resetAll() {
+            if (confirm('Reset semua data? Tidak bisa dibatalkan.')) {
+                localStorage.removeItem('commandCenter');
+                location.reload();
+            }
+        }
+    }
+}
+</script>
+</body>
+</html>
