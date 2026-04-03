@@ -3,203 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GhostChat | No Trace</title>
+    <title>obrolan | off the record</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap');
-        * { font-family: 'Inter', sans-serif; }
-        
-        /* Anti screenshot - blur effect */
-        body.screenshot-blur {
-            filter: blur(25px);
-            transition: filter 0.05s;
-            pointer-events: none;
-        }
-        
-        /* Smooth scroll */
-        .messages-container {
-            scroll-behavior: smooth;
-        }
-        
-        /* Custom scrollbar */
+        * { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif; }
+        body { background: #0c0c0c; }
+        .message-bubble-me { background: #1e3a2f; border-left: 3px solid #2dd4bf; }
+        .message-bubble-other { background: #1a1a1a; border-left: 3px solid #404040; }
+        .room-code { letter-spacing: 2px; font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        .soft-shadow { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .typing-dot { animation: blink 1.2s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%,60%,100%{ opacity:0.2; } 30%{ opacity:1; } }
+        .fade-in { animation: fade 0.15s ease; }
+        @keyframes fade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(45, 212, 191, 0.05); }
-        ::-webkit-scrollbar-thumb { background: rgba(45, 212, 191, 0.4); border-radius: 10px; }
-        
-        /* Glass morphism */
-        .glass {
-            background: rgba(15, 25, 35, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(45, 212, 191, 0.15);
-        }
-        
-        .glass-card {
-            background: rgba(15, 25, 35, 0.4);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(45, 212, 191, 0.1);
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.2s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Typing indicator */
-        .typing-dot {
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #2dd4bf40; border-radius: 10px; }
+        input, button { outline: none; }
+        button { cursor: pointer; }
+        .bg-mesh { background-image: radial-gradient(#2dd4bf08 1px, transparent 1px); background-size: 24px 24px; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-teal-300">
+<body class="bg-mesh bg-black text-gray-200">
 
-<div x-data="ghostChat()" x-init="init()" class="h-screen flex flex-col max-w-md mx-auto relative">
-    
-    <!-- Anti Screenshot Alert -->
-    <div x-show="screenshotWarning" 
-         x-transition.duration.200ms
-         class="fixed top-0 left-0 right-0 bg-red-600/95 text-white text-center py-3 text-sm z-50 shadow-lg">
-        ⚠️ {{ screenshotMsg }}
-    </div>
+<div x-data="roomChat()" x-init="initPeer()" class="h-dvh flex flex-col max-w-lg mx-auto">
 
-    <!-- HEADER -->
-    <div class="glass mx-3 mt-3 rounded-2xl p-4 shadow-xl">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></div>
-                <h1 class="font-semibold tracking-wide text-teal-100 text-base">👻 GHOST CHAT</h1>
-            </div>
-            <div class="text-[8px] uppercase tracking-wider text-teal-500/70 bg-teal-950/30 px-2 py-1 rounded-full">
-                No trace • No proof
-            </div>
-        </div>
-        <div class="text-[9px] text-teal-400/50 mt-2 flex justify-between">
-            <span>💀 Chat hilang saat tab ditutup</span>
-            <span>📸 Anti screenshot aktif</span>
-        </div>
-    </div>
-
-    <!-- PEER ID SECTION (Self chat support) -->
-    <div class="px-3 mt-3 space-y-2">
-        <div class="glass-card rounded-xl p-3">
-            <div class="text-[9px] text-teal-400/60 uppercase tracking-wider flex justify-between">
-                <span>🆔 Your Ghost ID</span>
-                <span class="font-mono text-[8px]">{{ peerReady ? '● Ready' : '○ Connecting...' }}</span>
-            </div>
-            <div class="font-mono text-xs break-all text-teal-300 font-medium" x-text="myPeerId || '🌀 Loading...'"></div>
-        </div>
-        
-        <!-- CONNECT FORM (bisa connect ke diri sendiri atau teman) -->
-        <div class="glass-card rounded-xl p-3">
-            <div class="text-[9px] text-teal-400/60 uppercase tracking-wider mb-2">🔗 Connect (optional)</div>
-            <div class="flex gap-2">
-                <input type="text" 
-                       x-model="targetId" 
-                       placeholder="Paste Ghost ID teman / atau ID kamu sendiri"
-                       class="flex-1 bg-black/40 border border-teal-500/30 rounded-xl px-3 py-2 text-xs text-teal-300 placeholder-teal-700/50 focus:outline-none focus:border-teal-400/60 transition">
-                <button @click="connectToPeer()" 
-                        :disabled="!targetId || connected"
-                        class="bg-teal-600/30 hover:bg-teal-600/50 disabled:opacity-30 disabled:cursor-not-allowed text-teal-200 font-medium px-4 py-2 rounded-xl transition text-xs border border-teal-500/30">
-                    CONNECT
-                </button>
-            </div>
-            <div class="text-[9px] text-teal-400/50 mt-2" x-show="connected" x-text="'✅ Connected to: ' + connectedTo"></div>
-            <div class="text-[9px] text-teal-400/50 mt-2" x-show="!connected && peerReady" x-text="'💡 Kamu bisa chat sendiri: copy ID di atas, lalu paste dan connect'"></div>
-        </div>
-    </div>
-
-    <!-- MESSAGES AREA -->
-    <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2 messages-container" x-ref="messagesContainer">
-        <template x-for="msg in messages" :key="msg.id">
-            <div class="fade-in flex" :class="msg.isMe ? 'justify-end' : 'justify-start'">
-                <div class="max-w-[80%] p-3 rounded-2xl text-sm"
-                     :class="msg.isMe ? 'bg-teal-600/30 border border-teal-500/40 rounded-br-none' : 'bg-slate-800/60 border border-slate-700 rounded-bl-none'">
-                    <div class="break-words" x-text="msg.text"></div>
-                    <div class="text-[8px] text-teal-500/50 mt-1 text-right" x-text="msg.time"></div>
+    <!-- header kecil, tidak berisik -->
+    <div class="px-4 pt-5 pb-2 border-b border-white/5">
+        <div class="flex justify-between items-end">
+            <div>
+                <div class="text-[10px] uppercase tracking-[0.3em] text-teal-400/50">off the record</div>
+                <div class="text-sm font-medium mt-0.5" x-show="!roomId && !joinedRoomId">ngobrol. ilang. tanpa jejak.</div>
+                <div class="text-sm font-mono text-teal-300/80" x-show="roomId || joinedRoomId">
+                    <span x-show="isHost">📡 room: <span class="tracking-wider" x-text="roomId"></span></span>
+                    <span x-show="!isHost && joinedRoomId">🚪 room: <span x-text="joinedRoomId"></span></span>
                 </div>
             </div>
-        </template>
-        
-        <div x-show="messages.length === 0 && peerReady" class="text-center text-teal-500/40 text-xs py-20">
-            <div class="text-4xl mb-2">👻</div>
-            <div>Belum ada pesan</div>
-            <div class="text-[10px] mt-2">Copy ID di atas → Connect (ke diri sendiri) → Chat</div>
-        </div>
-        
-        <!-- Typing indicator -->
-        <div x-show="isTyping && !connectedToSelf" class="flex justify-start fade-in">
-            <div class="bg-slate-800/50 rounded-2xl rounded-bl-none px-4 py-2">
-                <div class="flex gap-1">
-                    <span class="typing-dot text-teal-400">●</span>
-                    <span class="typing-dot text-teal-400" style="animation-delay: 0.2s">●</span>
-                    <span class="typing-dot text-teal-400" style="animation-delay: 0.4s">●</span>
-                </div>
-            </div>
+            <div class="text-[9px] text-gray-500" x-show="peerReady && !inRoom">🔘 siap</div>
+            <div class="text-[9px] text-teal-400/60" x-show="inRoom && connectedCount > 0" x-text="'👥 ' + connectedCount + ' online'"></div>
         </div>
     </div>
 
-    <!-- INPUT AREA -->
-    <div class="glass mx-3 mb-3 rounded-2xl p-3">
-        <div class="flex gap-2">
-            <input type="text"
-                   x-model="newMessage"
-                   @keyup.enter="sendMessage()"
-                   @keydown="typingHandler()"
-                   :disabled="!peerReady"
-                   placeholder="Ketik pesan..."
-                   class="flex-1 bg-black/40 border border-teal-500/30 rounded-xl px-4 py-3 text-sm text-teal-300 placeholder-teal-700/50 focus:outline-none focus:border-teal-400/60 transition disabled:opacity-50">
+    <!-- tampilan utama: sebelum masuk room -->
+    <div x-show="!inRoom" class="flex-1 flex flex-col justify-center px-5 gap-4">
+        <div class="bg-white/5 rounded-2xl p-6 border border-white/10 soft-shadow">
+            <div class="text-center mb-5">
+                <div class="text-4xl mb-2">💬</div>
+                <div class="text-sm text-gray-300">obrolan langsung. tanpa server. tanpa sisa.</div>
+                <div class="text-[11px] text-gray-500 mt-1">peer-to-peer • lenyap saat semua keluar</div>
+            </div>
             
-            <button @click="sendMessage()"
-                    :disabled="!peerReady || !newMessage.trim()"
-                    class="bg-teal-600/40 hover:bg-teal-600/60 disabled:opacity-30 disabled:cursor-not-allowed text-teal-200 font-medium px-5 py-3 rounded-xl transition">
-                📤
+            <button @click="createRoom()" :disabled="!peerReady" class="w-full bg-teal-600/80 hover:bg-teal-600 disabled:opacity-40 py-3 rounded-xl text-white font-medium transition flex items-center justify-center gap-2">
+                <span>✨</span> buat room baru
+            </button>
+            
+            <div class="relative my-4">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+                <div class="relative flex justify-center text-[10px]"><span class="bg-black px-2 text-gray-500">atau</span></div>
+            </div>
+            
+            <input type="text" x-model="joinCodeInput" placeholder="kode room 6 digit" maxlength="6" class="w-full bg-black/60 border border-white/20 rounded-xl px-4 py-3 text-sm text-center tracking-[0.2em] text-teal-300 placeholder:text-gray-600">
+            <button @click="joinRoom()" :disabled="!peerReady || joinCodeInput.length !== 6" class="w-full mt-3 bg-white/5 hover:bg-white/10 border border-white/20 py-3 rounded-xl text-gray-300 font-medium transition">
+                masuk room
             </button>
         </div>
         
-        <div class="flex justify-between mt-2 text-[8px] text-teal-500/50 px-1">
-            <span>🔒 End-to-end encrypted (WebRTC)</span>
-            <span x-show="connectedToSelf" class="text-teal-400">🔄 Self chat mode</span>
-            <span x-show="!connectedToSelf && connected">👥 Connected to friend</span>
-            <span x-show="!connected">💀 Pesan hilang saat tab ditutup</span>
+        <div class="text-center text-[10px] text-gray-600 px-4">
+            ⚡ semua pesan hilang saat room kosong • tidak ada database • screenshot akan kedeteksi (percayalah)
         </div>
     </div>
+
+    <!-- tampilan chat: saat sudah di dalam room -->
+    <div x-show="inRoom" class="flex-1 flex flex-col min-h-0">
+        
+        <!-- daftar pesan -->
+        <div class="flex-1 overflow-y-auto px-4 py-3 space-y-2" x-ref="chatContainer">
+            <template x-for="msg in messages" :key="msg.id">
+                <div class="fade-in flex" :class="msg.isMe ? 'justify-end' : 'justify-start'">
+                    <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm" :class="msg.isMe ? 'message-bubble-me text-gray-100' : 'message-bubble-other text-gray-300'">
+                        <div class="break-words leading-relaxed" x-text="msg.text"></div>
+                        <div class="text-[9px] opacity-40 mt-1" x-text="msg.time"></div>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- typing indicator -->
+            <div x-show="typing.active" class="flex justify-start fade-in">
+                <div class="bg-gray-900/80 px-4 py-2 rounded-2xl rounded-bl-none">
+                    <div class="flex gap-1.5">
+                        <span class="typing-dot text-teal-400 text-lg">•</span>
+                        <span class="typing-dot text-teal-400 text-lg">•</span>
+                        <span class="typing-dot text-teal-400 text-lg">•</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div x-show="messages.length === 0" class="text-center text-gray-600 text-sm py-24">
+                <div class="text-3xl mb-2 opacity-30">🗝️</div>
+                <div>belum ada pesan</div>
+                <div class="text-[10px] mt-1">semua akan hilang saat room ditinggal</div>
+            </div>
+        </div>
+        
+        <!-- input pesan -->
+        <div class="border-t border-white/10 bg-black/40 p-3">
+            <div class="flex gap-2 items-center">
+                <input type="text" 
+                       x-model="newMessage" 
+                       @keyup.enter="sendMessage()"
+                       @keydown="handleTyping()"
+                       :disabled="!inRoom || !peerReady"
+                       placeholder="ketik pesan..."
+                       class="flex-1 bg-gray-900/80 border border-gray-700 rounded-full px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:border-teal-500/50 transition">
+                <button @click="sendMessage()" :disabled="!newMessage.trim() || !inRoom" class="bg-teal-600/70 hover:bg-teal-600 disabled:opacity-30 p-2.5 rounded-full w-10 h-10 flex items-center justify-center transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
+            </div>
+            <div class="flex justify-between mt-2 px-2 text-[9px] text-gray-600">
+                <span>🔒 langsung antar peer</span>
+                <span x-show="isHost && connectedCount === 1" class="text-amber-600">⌛ room akan mati jika kamu keluar</span>
+                <span x-show="connectedCount > 1" class="text-teal-600/60">💬 diam-diam</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- anti screenshot overlay tipis -->
+    <div x-show="screenshotFlash" x-transition.opacity.duration.150ms class="fixed inset-0 bg-red-600/30 pointer-events-none z-50"></div>
 </div>
 
 <script>
-function ghostChat() {
+function roomChat() {
     return {
-        // State
-        myPeerId: null,
-        targetId: '',
-        connected: false,
-        connectedTo: '',
-        connectedToSelf: false,
+        // room & peer
+        peer: null,
         peerReady: false,
+        myId: null,
+        roomId: null,           // kalo host
+        joinedRoomId: null,     // kalo guest
+        isHost: false,
+        inRoom: false,
+        
+        // koneksi
+        connections: [],        // array of connections (multi-user support)
+        connectedCount: 0,
+        
+        // UI
+        joinCodeInput: '',
         messages: [],
         newMessage: '',
-        isTyping: false,
-        typingTimeout: null,
-        screenshotWarning: false,
-        screenshotMsg: '',
+        typing: { active: false, timeout: null },
+        screenshotFlash: false,
         
-        // Internal
-        peer: null,
-        conn: null,
+        // internal
+        typingTimeoutGlobal: null,
         
-        init() {
-            // Anti screenshot detection
-            this.initAntiScreenshot();
-            
-            // Init PeerJS
+        initPeer() {
             this.peer = new Peer({
                 host: '0.peerjs.com',
                 port: 443,
@@ -208,218 +170,183 @@ function ghostChat() {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
                         { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        {
-                            urls: 'turn:openrelay.metered.ca:80',
-                            username: 'openrelayproject',
-                            credential: 'openrelayproject'
-                        }
+                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
                     ]
                 }
             });
             
             this.peer.on('open', (id) => {
-                this.myPeerId = id;
+                this.myId = id;
                 this.peerReady = true;
-                this.addSystemMessage('✅ Ghost ID siap digunakan');
             });
             
             this.peer.on('connection', (conn) => {
-                this.setupConnection(conn, false);
+                // incoming connection from someone who knows our ID (room join)
+                this.handleNewConnection(conn);
             });
             
-            this.peer.on('error', (err) => {
-                console.error('Peer error:', err);
-            });
-        },
-        
-        initAntiScreenshot() {
-            // Detect keyboard screenshot (PrintScreen)
+            this.peer.on('error', (err) => console.warn(err));
+            
+            // anti screenshot (simple flash)
             document.addEventListener('keyup', (e) => {
                 if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) {
-                    this.triggerScreenshotWarning();
+                    this.screenshotFlash = true;
+                    setTimeout(() => { this.screenshotFlash = false; }, 200);
                 }
             });
-            
-            // Detect via visibility change + blur (heuristic)
-            let blurTimeout;
-            window.addEventListener('blur', () => {
-                blurTimeout = setTimeout(() => {
-                    document.body.classList.add('screenshot-blur');
-                    this.triggerScreenshotWarning();
-                    setTimeout(() => {
-                        document.body.classList.remove('screenshot-blur');
-                    }, 500);
-                }, 100);
-            });
-            window.addEventListener('focus', () => {
-                clearTimeout(blurTimeout);
-                document.body.classList.remove('screenshot-blur');
-            });
         },
         
-        triggerScreenshotWarning() {
-            this.screenshotWarning = true;
-            this.screenshotMsg = '📸 SCREENSHOT DETECTED! Semua pesan akan dihapus jika terdeteksi lagi.';
-            setTimeout(() => {
-                this.screenshotWarning = false;
-            }, 3000);
-            
-            // Optional: clear messages on repeated screenshot
-            // (commented - too aggressive)
+        createRoom() {
+            if (!this.peerReady) return;
+            // generate 6 digit room code
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            this.roomId = code;
+            this.isHost = true;
+            this.inRoom = true;
+            this.addSystemMessage(`room ${code} dibuat. share kode ini ke teman.`);
+            // host siap menerima koneksi
         },
         
-        connectToPeer() {
-            if (!this.targetId || !this.peer) return;
+        joinRoom() {
+            if (!this.peerReady || this.joinCodeInput.length !== 6) return;
+            const targetHostId = this.joinCodeInput; // host's peer ID = room code
+            this.joinedRoomId = this.joinCodeInput;
+            this.isHost = false;
+            this.inRoom = true;
             
-            // Check if connecting to self
-            if (this.targetId === this.myPeerId) {
-                this.connectedToSelf = true;
-                this.connected = true;
-                this.connectedTo = 'DIRI SENDIRI (self chat)';
-                this.addSystemMessage('🔗 Terhubung dengan diri sendiri! Kirim pesan akan muncul di kedua sisi.');
-                
-                // Create virtual connection
-                this.setupSelfConnection();
+            // connect ke host
+            const conn = this.peer.connect(targetHostId);
+            this.setupConnection(conn, targetHostId);
+            this.addSystemMessage(`menyambung ke room ${targetHostId}...`);
+        },
+        
+        handleNewConnection(conn) {
+            // only accept if we are host and in room
+            if (!this.isHost || !this.inRoom) {
+                conn.close();
                 return;
             }
-            
-            this.connectedToSelf = false;
-            this.connectedTo = this.targetId;
-            const conn = this.peer.connect(this.targetId);
-            this.setupConnection(conn, true);
-            this.addSystemMessage('🔗 Menghubungkan ke ' + this.targetId + '...');
+            this.setupConnection(conn, conn.peer);
         },
         
-        setupSelfConnection() {
-            // Self chat: simulate both sides
-            // Just need to mark that we're in self mode
-            // Messages will be handled differently in sendMessage
-        },
-        
-        setupConnection(conn, isOutgoing) {
-            this.conn = conn;
+        setupConnection(conn, peerId) {
+            // avoid duplicate
+            if (this.connections.find(c => c.peer === peerId)) return;
             
             conn.on('open', () => {
-                if (!this.connectedToSelf) {
-                    this.connected = true;
-                    this.addSystemMessage('✅ Terhubung! Mulai chatting.');
-                }
+                this.connections.push({ conn, peer: peerId });
+                this.connectedCount = this.connections.length;
+                this.addSystemMessage(`🔗 seseorang bergabung (${this.connectedCount} total)`);
+                
+                // broadcast existing messages to new joiner? optional, but we keep it clean (no history resend)
+                // kirim pesan bahwa ada anggota baru ke semua
+                this.broadcast({ type: 'member_count', count: this.connectedCount });
             });
             
             conn.on('data', (data) => {
-                this.receiveMessage(data);
+                this.handleData(data, peerId);
             });
             
             conn.on('close', () => {
-                if (!this.connectedToSelf) {
-                    this.connected = false;
-                    this.addSystemMessage('❌ Koneksi terputus');
+                this.connections = this.connections.filter(c => c.peer !== peerId);
+                this.connectedCount = this.connections.length;
+                if (this.isHost && this.connectedCount === 0 && this.inRoom) {
+                    this.addSystemMessage(`room kosong. akan ditutup dalam 5 detik.`);
+                    setTimeout(() => {
+                        if (this.connectedCount === 0 && this.inRoom) {
+                            this.leaveRoom();
+                        }
+                    }, 5000);
+                } else {
+                    this.addSystemMessage(`👋 seseorang keluar (${this.connectedCount} tersisa)`);
+                    this.broadcast({ type: 'member_count', count: this.connectedCount });
                 }
             });
-            
-            conn.on('error', (err) => {
-                console.error('Connection error:', err);
-                if (!this.connectedToSelf) {
-                    this.addSystemMessage('⚠️ Gagal terhubung: ' + err.message);
+        },
+        
+        handleData(data, fromPeer) {
+            if (data.type === 'message') {
+                this.messages.push({
+                    id: Date.now() + '_' + Math.random(),
+                    text: data.text,
+                    isMe: false,
+                    time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
+                });
+                this.scrollDown();
+            } else if (data.type === 'typing') {
+                this.typing.active = true;
+                clearTimeout(this.typing.timeout);
+                this.typing.timeout = setTimeout(() => { this.typing.active = false; }, 1200);
+            } else if (data.type === 'member_count') {
+                this.connectedCount = data.count;
+            }
+        },
+        
+        broadcast(msg, excludePeer = null) {
+            this.connections.forEach(c => {
+                if (c.peer !== excludePeer && c.conn && c.conn.open) {
+                    c.conn.send(msg);
                 }
             });
         },
         
         sendMessage() {
-            if (!this.peerReady || !this.newMessage.trim()) return;
-            if (!this.connected && !this.connectedToSelf) {
-                this.addSystemMessage('⚠️ Belum terhubung. Paste Ghost ID dulu.');
-                return;
-            }
-            
+            if (!this.inRoom || !this.newMessage.trim()) return;
             const text = this.newMessage.trim();
-            const messageId = Date.now() + '_' + Math.random();
-            const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             
-            // Add to UI
             this.messages.push({
-                id: messageId,
+                id: Date.now() + '_' + Math.random(),
                 text: text,
                 isMe: true,
-                time: timeStr
+                time: time
             });
             
-            this.scrollToBottom();
+            this.broadcast({ type: 'message', text: text });
             this.newMessage = '';
-            
-            // Send via P2P or self
-            const messageData = {
-                type: 'message',
-                id: messageId,
-                text: text,
-                timestamp: Date.now()
-            };
-            
-            if (this.connectedToSelf) {
-                // Self chat: simulate receiving message
-                setTimeout(() => {
-                    this.messages.push({
-                        id: messageId + '_self',
-                        text: text,
-                        isMe: false,
-                        time: timeStr
-                    });
-                    this.scrollToBottom();
-                }, 50);
-            } else if (this.conn) {
-                this.conn.send(messageData);
-            }
+            this.scrollDown();
         },
         
-        receiveMessage(data) {
-            if (data.type === 'message') {
-                const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                
-                this.messages.push({
-                    id: data.id,
-                    text: data.text,
-                    isMe: false,
-                    time: timeStr
-                });
-                
-                this.scrollToBottom();
-            }
-            
-            if (data.type === 'typing') {
-                this.isTyping = true;
-                clearTimeout(this.typingTimeout);
-                this.typingTimeout = setTimeout(() => {
-                    this.isTyping = false;
-                }, 1000);
-            }
+        handleTyping() {
+            if (!this.inRoom) return;
+            this.broadcast({ type: 'typing' });
         },
         
-        typingHandler() {
-            if (!this.connected || this.connectedToSelf) return;
-            if (this.conn) {
-                this.conn.send({ type: 'typing' });
-            }
-        },
-        
-        addSystemMessage(text) {
+        addSystemMessage(txt) {
             this.messages.push({
                 id: 'sys_' + Date.now(),
-                text: text,
+                text: txt,
                 isMe: false,
-                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
             });
-            this.scrollToBottom();
+            this.scrollDown();
         },
         
-        scrollToBottom() {
+        leaveRoom() {
+            // close all connections
+            this.connections.forEach(c => { try { c.conn.close(); } catch(e) {} });
+            this.connections = [];
+            this.connectedCount = 0;
+            this.inRoom = false;
+            this.roomId = null;
+            this.joinedRoomId = null;
+            this.isHost = false;
+            this.messages = [];
+            this.addSystemMessage = () => {}; // reset
+            // reload UI state
             setTimeout(() => {
-                const container = this.$refs.messagesContainer;
-                if (container) container.scrollTop = container.scrollHeight;
-            }, 50);
+                location.reload(); // simplest reset
+            }, 100);
+        },
+        
+        scrollDown() {
+            setTimeout(() => {
+                const el = this.$refs.chatContainer;
+                if (el) el.scrollTop = el.scrollHeight;
+            }, 30);
         }
     }
 }
 </script>
 </body>
-                </html>
+</html>
