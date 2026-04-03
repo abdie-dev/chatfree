@@ -1,352 +1,561 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>obrolan | off the record</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <style>
-        * { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif; }
-        body { background: #0c0c0c; }
-        .message-bubble-me { background: #1e3a2f; border-left: 3px solid #2dd4bf; }
-        .message-bubble-other { background: #1a1a1a; border-left: 3px solid #404040; }
-        .room-code { letter-spacing: 2px; font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
-        .soft-shadow { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .typing-dot { animation: blink 1.2s infinite; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0%,60%,100%{ opacity:0.2; } 30%{ opacity:1; } }
-        .fade-in { animation: fade 0.15s ease; }
-        @keyframes fade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #2dd4bf40; border-radius: 10px; }
-        input, button { outline: none; }
-        button { cursor: pointer; }
-        .bg-mesh { background-image: radial-gradient(#2dd4bf08 1px, transparent 1px); background-size: 24px 24px; }
-    </style>
-</head>
-<body class="bg-mesh bg-black text-gray-200">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0xENIGMA // GHOST ROOM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
-<div x-data="roomChat()" x-init="initPeer()" class="h-dvh flex flex-col max-w-lg mx-auto">
-
-    <!-- header kecil, tidak berisik -->
-    <div class="px-4 pt-5 pb-2 border-b border-white/5">
-        <div class="flex justify-between items-end">
-            <div>
-                <div class="text-[10px] uppercase tracking-[0.3em] text-teal-400/50">off the record</div>
-                <div class="text-sm font-medium mt-0.5" x-show="!roomId && !joinedRoomId">ngobrol. ilang. tanpa jejak.</div>
-                <div class="text-sm font-mono text-teal-300/80" x-show="roomId || joinedRoomId">
-                    <span x-show="isHost">📡 room: <span class="tracking-wider" x-text="roomId"></span></span>
-                    <span x-show="!isHost && joinedRoomId">🚪 room: <span x-text="joinedRoomId"></span></span>
-                </div>
-            </div>
-            <div class="text-[9px] text-gray-500" x-show="peerReady && !inRoom">🔘 siap</div>
-            <div class="text-[9px] text-teal-400/60" x-show="inRoom && connectedCount > 0" x-text="'👥 ' + connectedCount + ' online'"></div>
-        </div>
-    </div>
-
-    <!-- tampilan utama: sebelum masuk room -->
-    <div x-show="!inRoom" class="flex-1 flex flex-col justify-center px-5 gap-4">
-        <div class="bg-white/5 rounded-2xl p-6 border border-white/10 soft-shadow">
-            <div class="text-center mb-5">
-                <div class="text-4xl mb-2">💬</div>
-                <div class="text-sm text-gray-300">obrolan langsung. tanpa server. tanpa sisa.</div>
-                <div class="text-[11px] text-gray-500 mt-1">peer-to-peer • lenyap saat semua keluar</div>
-            </div>
-            
-            <button @click="createRoom()" :disabled="!peerReady" class="w-full bg-teal-600/80 hover:bg-teal-600 disabled:opacity-40 py-3 rounded-xl text-white font-medium transition flex items-center justify-center gap-2">
-                <span>✨</span> buat room baru
-            </button>
-            
-            <div class="relative my-4">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
-                <div class="relative flex justify-center text-[10px]"><span class="bg-black px-2 text-gray-500">atau</span></div>
-            </div>
-            
-            <input type="text" x-model="joinCodeInput" placeholder="kode room 6 digit" maxlength="6" class="w-full bg-black/60 border border-white/20 rounded-xl px-4 py-3 text-sm text-center tracking-[0.2em] text-teal-300 placeholder:text-gray-600">
-            <button @click="joinRoom()" :disabled="!peerReady || joinCodeInput.length !== 6" class="w-full mt-3 bg-white/5 hover:bg-white/10 border border-white/20 py-3 rounded-xl text-gray-300 font-medium transition">
-                masuk room
-            </button>
-        </div>
-        
-        <div class="text-center text-[10px] text-gray-600 px-4">
-            ⚡ semua pesan hilang saat room kosong • tidak ada database • screenshot akan kedeteksi (percayalah)
-        </div>
-    </div>
-
-    <!-- tampilan chat: saat sudah di dalam room -->
-    <div x-show="inRoom" class="flex-1 flex flex-col min-h-0">
-        
-        <!-- daftar pesan -->
-        <div class="flex-1 overflow-y-auto px-4 py-3 space-y-2" x-ref="chatContainer">
-            <template x-for="msg in messages" :key="msg.id">
-                <div class="fade-in flex" :class="msg.isMe ? 'justify-end' : 'justify-start'">
-                    <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm" :class="msg.isMe ? 'message-bubble-me text-gray-100' : 'message-bubble-other text-gray-300'">
-                        <div class="break-words leading-relaxed" x-text="msg.text"></div>
-                        <div class="text-[9px] opacity-40 mt-1" x-text="msg.time"></div>
-                    </div>
-                </div>
-            </template>
-            
-            <!-- typing indicator -->
-            <div x-show="typing.active" class="flex justify-start fade-in">
-                <div class="bg-gray-900/80 px-4 py-2 rounded-2xl rounded-bl-none">
-                    <div class="flex gap-1.5">
-                        <span class="typing-dot text-teal-400 text-lg">•</span>
-                        <span class="typing-dot text-teal-400 text-lg">•</span>
-                        <span class="typing-dot text-teal-400 text-lg">•</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div x-show="messages.length === 0" class="text-center text-gray-600 text-sm py-24">
-                <div class="text-3xl mb-2 opacity-30">🗝️</div>
-                <div>belum ada pesan</div>
-                <div class="text-[10px] mt-1">semua akan hilang saat room ditinggal</div>
-            </div>
-        </div>
-        
-        <!-- input pesan -->
-        <div class="border-t border-white/10 bg-black/40 p-3">
-            <div class="flex gap-2 items-center">
-                <input type="text" 
-                       x-model="newMessage" 
-                       @keyup.enter="sendMessage()"
-                       @keydown="handleTyping()"
-                       :disabled="!inRoom || !peerReady"
-                       placeholder="ketik pesan..."
-                       class="flex-1 bg-gray-900/80 border border-gray-700 rounded-full px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:border-teal-500/50 transition">
-                <button @click="sendMessage()" :disabled="!newMessage.trim() || !inRoom" class="bg-teal-600/70 hover:bg-teal-600 disabled:opacity-30 p-2.5 rounded-full w-10 h-10 flex items-center justify-center transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                </button>
-            </div>
-            <div class="flex justify-between mt-2 px-2 text-[9px] text-gray-600">
-                <span>🔒 langsung antar peer</span>
-                <span x-show="isHost && connectedCount === 1" class="text-amber-600">⌛ room akan mati jika kamu keluar</span>
-                <span x-show="connectedCount > 1" class="text-teal-600/60">💬 diam-diam</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- anti screenshot overlay tipis -->
-    <div x-show="screenshotFlash" x-transition.opacity.duration.150ms class="fixed inset-0 bg-red-600/30 pointer-events-none z-50"></div>
-</div>
-
-<script>
-function roomChat() {
-    return {
-        // room & peer
-        peer: null,
-        peerReady: false,
-        myId: null,
-        roomId: null,           // kalo host
-        joinedRoomId: null,     // kalo guest
-        isHost: false,
-        inRoom: false,
-        
-        // koneksi
-        connections: [],        // array of connections (multi-user support)
-        connectedCount: 0,
-        
-        // UI
-        joinCodeInput: '',
-        messages: [],
-        newMessage: '',
-        typing: { active: false, timeout: null },
-        screenshotFlash: false,
-        
-        // internal
-        typingTimeoutGlobal: null,
-        
-        initPeer() {
-            this.peer = new Peer({
-                host: '0.peerjs.com',
-                port: 443,
-                secure: true,
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
-                    ]
-                }
-            });
-            
-            this.peer.on('open', (id) => {
-                this.myId = id;
-                this.peerReady = true;
-            });
-            
-            this.peer.on('connection', (conn) => {
-                // incoming connection from someone who knows our ID (room join)
-                this.handleNewConnection(conn);
-            });
-            
-            this.peer.on('error', (err) => console.warn(err));
-            
-            // anti screenshot (simple flash)
-            document.addEventListener('keyup', (e) => {
-                if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) {
-                    this.screenshotFlash = true;
-                    setTimeout(() => { this.screenshotFlash = false; }, 200);
-                }
-            });
-        },
-        
-        createRoom() {
-            if (!this.peerReady) return;
-            // generate 6 digit room code
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            this.roomId = code;
-            this.isHost = true;
-            this.inRoom = true;
-            this.addSystemMessage(`room ${code} dibuat. share kode ini ke teman.`);
-            // host siap menerima koneksi
-        },
-        
-        joinRoom() {
-            if (!this.peerReady || this.joinCodeInput.length !== 6) return;
-            const targetHostId = this.joinCodeInput; // host's peer ID = room code
-            this.joinedRoomId = this.joinCodeInput;
-            this.isHost = false;
-            this.inRoom = true;
-            
-            // connect ke host
-            const conn = this.peer.connect(targetHostId);
-            this.setupConnection(conn, targetHostId);
-            this.addSystemMessage(`menyambung ke room ${targetHostId}...`);
-        },
-        
-        handleNewConnection(conn) {
-            // only accept if we are host and in room
-            if (!this.isHost || !this.inRoom) {
-                conn.close();
-                return;
-            }
-            this.setupConnection(conn, conn.peer);
-        },
-        
-        setupConnection(conn, peerId) {
-            // avoid duplicate
-            if (this.connections.find(c => c.peer === peerId)) return;
-            
-            conn.on('open', () => {
-                this.connections.push({ conn, peer: peerId });
-                this.connectedCount = this.connections.length;
-                this.addSystemMessage(`🔗 seseorang bergabung (${this.connectedCount} total)`);
-                
-                // broadcast existing messages to new joiner? optional, but we keep it clean (no history resend)
-                // kirim pesan bahwa ada anggota baru ke semua
-                this.broadcast({ type: 'member_count', count: this.connectedCount });
-            });
-            
-            conn.on('data', (data) => {
-                this.handleData(data, peerId);
-            });
-            
-            conn.on('close', () => {
-                this.connections = this.connections.filter(c => c.peer !== peerId);
-                this.connectedCount = this.connections.length;
-                if (this.isHost && this.connectedCount === 0 && this.inRoom) {
-                    this.addSystemMessage(`room kosong. akan ditutup dalam 5 detik.`);
-                    setTimeout(() => {
-                        if (this.connectedCount === 0 && this.inRoom) {
-                            this.leaveRoom();
-                        }
-                    }, 5000);
-                } else {
-                    this.addSystemMessage(`👋 seseorang keluar (${this.connectedCount} tersisa)`);
-                    this.broadcast({ type: 'member_count', count: this.connectedCount });
-                }
-            });
-        },
-        
-        handleData(data, fromPeer) {
-            if (data.type === 'message') {
-                this.messages.push({
-                    id: Date.now() + '_' + Math.random(),
-                    text: data.text,
-                    isMe: false,
-                    time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
-                });
-                this.scrollDown();
-            } else if (data.type === 'typing') {
-                this.typing.active = true;
-                clearTimeout(this.typing.timeout);
-                this.typing.timeout = setTimeout(() => { this.typing.active = false; }, 1200);
-            } else if (data.type === 'member_count') {
-                this.connectedCount = data.count;
-            }
-        },
-        
-        broadcast(msg, excludePeer = null) {
-            this.connections.forEach(c => {
-                if (c.peer !== excludePeer && c.conn && c.conn.open) {
-                    c.conn.send(msg);
-                }
-            });
-        },
-        
-        sendMessage() {
-            if (!this.inRoom || !this.newMessage.trim()) return;
-            const text = this.newMessage.trim();
-            const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-            
-            this.messages.push({
-                id: Date.now() + '_' + Math.random(),
-                text: text,
-                isMe: true,
-                time: time
-            });
-            
-            this.broadcast({ type: 'message', text: text });
-            this.newMessage = '';
-            this.scrollDown();
-        },
-        
-        handleTyping() {
-            if (!this.inRoom) return;
-            this.broadcast({ type: 'typing' });
-        },
-        
-        addSystemMessage(txt) {
-            this.messages.push({
-                id: 'sys_' + Date.now(),
-                text: txt,
-                isMe: false,
-                time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
-            });
-            this.scrollDown();
-        },
-        
-        leaveRoom() {
-            // close all connections
-            this.connections.forEach(c => { try { c.conn.close(); } catch(e) {} });
-            this.connections = [];
-            this.connectedCount = 0;
-            this.inRoom = false;
-            this.roomId = null;
-            this.joinedRoomId = null;
-            this.isHost = false;
-            this.messages = [];
-            this.addSystemMessage = () => {}; // reset
-            // reload UI state
-            setTimeout(() => {
-                location.reload(); // simplest reset
-            }, 100);
-        },
-        
-        scrollDown() {
-            setTimeout(() => {
-                const el = this.$refs.chatContainer;
-                if (el) el.scrollTop = el.scrollHeight;
-            }, 30);
-        }
+  <style>
+    :root {
+      --c-bg: #030508;
+      --c-surface: #080d14;
+      --c-border: #0f2a1a;
+      --c-border-bright: #0d4a2a;
+      --c-green: #00ff6a;
+      --c-green-dim: #00cc55;
+      --c-green-ghost: rgba(0,255,106,0.06);
+      --c-green-glow: rgba(0,255,106,0.3);
+      --c-red: #ff2244;
+      --c-amber: #ffb300;
+      --c-text: #a8c4a8;
+      --c-text-dim: #3a5a3a;
+      --c-muted: #1e3a1e;
     }
-}
-</script>
-</body>
-</html>
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* CRT SCANLINES */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.15) 2px,
+        rgba(0,0,0,0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* NOISE GRAIN */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    .font-mono-title { font-family: 'Orbitron', sans-serif; }
+    .font-mono-code { font-family: 'Share Tech Mono', monospace; }
+    .font-mono-body { font-family: 'JetBrains Mono', monospace; }
+
+    /* GRID BG */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,255,106,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,106,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* TERMINAL BORDER */
+    .t-border {
+      border: 1px solid var(--c-border);
+      position: relative;
+    }
+    .t-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border: 1px solid var(--c-border-bright);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .t-border:hover::before { opacity: 1; }
+
+    /* CORNER DECORATIONS */
+    .corner-tl::before, .corner-tl::after,
+    .corner-br::before, .corner-br::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+    }
+    .corner-tl::before {
+      top: -1px; left: -1px;
+      border-top: 2px solid var(--c-green);
+      border-left: 2px solid var(--c-green);
+    }
+    .corner-br::after {
+      bottom: -1px; right: -1px;
+      border-bottom: 2px solid var(--c-green);
+      border-right: 2px solid var(--c-green);
+    }
+
+    /* GLOW TEXT */
+    .glow {
+      color: var(--c-green);
+      text-shadow: 0 0 10px var(--c-green-glow), 0 0 30px rgba(0,255,106,0.15);
+    }
+    .glow-soft { color: var(--c-green); text-shadow: 0 0 8px rgba(0,255,106,0.4); }
+    .glow-dim { color: var(--c-green-dim); }
+
+    /* BUTTON */
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 1px solid var(--c-green-dim);
+      background: var(--c-green-ghost);
+      color: var(--c-green);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-ghost::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--c-green);
+      transform: translateX(-101%);
+      transition: transform 0.2s;
+      z-index: 0;
+    }
+    .btn-ghost:hover::before { transform: translateX(0); }
+    .btn-ghost:hover { color: #000; border-color: var(--c-green); }
+    .btn-ghost span { position: relative; z-index: 1; }
+
+    .btn-danger {
+      border-color: var(--c-red);
+      color: var(--c-red);
+      background: rgba(255,34,68,0.05);
+    }
+    .btn-danger::before { background: var(--c-red); }
+    .btn-danger:hover { color: #000; border-color: var(--c-red); }
+
+    /* INPUT */
+    .t-input {
+      background: rgba(0,255,106,0.03);
+      border: 1px solid var(--c-border-bright);
+      color: var(--c-green);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 15px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+      letter-spacing: 0.2em;
+    }
+    .t-input::placeholder { color: var(--c-text-dim); letter-spacing: 0.1em; font-size: 12px; }
+    .t-input:focus {
+      border-color: var(--c-green);
+      box-shadow: 0 0 0 1px var(--c-green), 0 0 15px rgba(0,255,106,0.1);
+    }
+
+    /* LABEL */
+    .t-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--c-text-dim);
+    }
+
+    /* HEADER BAR */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(0,255,106,0.03);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* MESSAGES AREA */
+    #messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+    #messages-container::-webkit-scrollbar { width: 3px; }
+    #messages-container::-webkit-scrollbar-track { background: transparent; }
+    #messages-container::-webkit-scrollbar-thumb { background: var(--c-border-bright); }
+
+    /* MESSAGE BUBBLE */
+    .msg-mine {
+      align-self: flex-end;
+      background: rgba(0,255,106,0.07);
+      border: 1px solid rgba(0,255,106,0.2);
+      border-right: 3px solid var(--c-green);
+      padding: 8px 12px;
+      max-width: 75%;
+      position: relative;
+    }
+    .msg-other {
+      align-self: flex-start;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--c-border-bright);
+      border-left: 3px solid var(--c-text-dim);
+      padding: 8px 12px;
+      max-width: 75%;
+    }
+    .msg-system {
+      align-self: center;
+      color: var(--c-text-dim);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid var(--c-border);
+    }
+    .msg-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--c-text);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-mine .msg-text { color: rgba(0,255,106,0.9); }
+    .msg-time {
+      font-size: 9px;
+      color: var(--c-text-dim);
+      margin-top: 4px;
+      text-align: right;
+      letter-spacing: 0.05em;
+    }
+
+    /* TYPING INDICATOR */
+    .typing-dots span {
+      display: inline-block;
+      width: 4px; height: 4px;
+      background: var(--c-green);
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ROOM CODE DISPLAY */
+    .room-code-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.5em;
+      color: var(--c-green);
+      text-shadow: 0 0 20px var(--c-green-glow), 0 0 60px rgba(0,255,106,0.1);
+      text-align: center;
+    }
+
+    /* STATUS BADGE */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 1px solid;
+    }
+    .status-online { color: var(--c-green); border-color: rgba(0,255,106,0.3); background: rgba(0,255,106,0.05); }
+    .status-pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--c-green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,106,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,255,106,0); }
+    }
+
+    /* SCREENSHOT FLASH */
+    .screenshot-flash {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 0, 68, 0.7);
+      z-index: 99999;
+      pointer-events: none;
+      animation: flashFade 0.25s ease-out forwards;
+    }
+    @keyframes flashFade {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* GLITCH TEXT */
+    .glitch {
+      position: relative;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+    }
+    .glitch::before {
+      color: #ff2244;
+      clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+      transform: translateX(-2px);
+      animation: glitch1 4s infinite;
+    }
+    .glitch::after {
+      color: #00ffe0;
+      clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+      transform: translateX(2px);
+      animation: glitch2 4s infinite;
+    }
+    @keyframes glitch1 {
+      0%, 95%, 100% { opacity: 0; }
+      96% { opacity: 1; transform: translateX(-3px) skewX(-2deg); }
+      97% { opacity: 0; }
+      98% { opacity: 1; transform: translateX(2px); }
+    }
+    @keyframes glitch2 {
+      0%, 94%, 100% { opacity: 0; }
+      95% { opacity: 1; transform: translateX(3px) skewX(1deg); }
+      96% { opacity: 0; }
+      97% { opacity: 1; transform: translateX(-1px); }
+    }
+
+    /* ANIMATE IN */
+    .fade-up {
+      animation: fadeUp 0.5s ease forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CURSOR BLINK */
+    .cursor-blink::after {
+      content: '\u2588';
+      animation: cursorBlink 1s step-end infinite;
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* SCAN LINE ANIMATION ON CONNECT */
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--c-green), transparent);
+      animation: scanDown 2s ease-in-out forwards;
+      pointer-events: none;
+    }
+    @keyframes scanDown {
+      0% { top: 0; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    /* LOADING BARS */
+    .loading-bar {
+      height: 2px;
+      background: var(--c-border);
+      overflow: hidden;
+      position: relative;
+    }
+    .loading-bar::after {
+      content: '';
+      position: absolute;
+      left: -30%;
+      top: 0;
+      width: 30%;
+      height: 100%;
+      background: var(--c-green);
+      animation: loadingAnim 1.2s ease-in-out infinite;
+    }
+    @keyframes loadingAnim {
+      0% { left: -30%; }
+      100% { left: 130%; }
+    }
+
+    /* SECTION DIVIDER */
+    .hex-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--c-text-dim);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .hex-divider::before, .hex-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--c-border-bright));
+    }
+    .hex-divider::after { background: linear-gradient(90deg, var(--c-border-bright), transparent); }
+
+    /* NOTIFY TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 10px 16px;
+      border: 1px solid var(--c-green-dim);
+      background: var(--c-surface);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--c-green);
+      z-index: 10000;
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* SCROLLBAR GLOBAL */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--c-border-bright); }
+
+    /* TAG BADGE */
+    .tag {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 1px solid;
+    }
+    .tag-host { color: var(--c-amber); border-color: rgba(255,179,0,0.4); background: rgba(255,179,0,0.06); }
+    .tag-guest { color: var(--c-text-dim); border-color: var(--c-border-bright); }
+  </style>
+</head>
+
+<body class="grid-bg" x-data="ghostRoom()" x-init="init()" @keyup.window="detectScreenshot($event)" @visibilitychange.window="handleVisibility()">
+
+  <!-- SCREENSHOT FLASH OVERLAY -->
+  <div x-show="screenshotFlash" x-cloak class="screenshot-flash" @animationend="screenshotFlash = false"></div>
+
+  <!-- TOAST NOTIFICATION -->
+  <template x-if="toast.show">
+    <div class="toast" x-text="toast.msg"></div>
+  </template>
+
+  <!-- MAIN LAYOUT -->
+  <div class="flex flex-col h-screen">
+
+    <!-- TOP BAR -->
+    <div class="header-bar flex-shrink-0 justify-between" style="border-bottom: 1px solid var(--c-border);">
+      <div class="flex items-center gap-3">
+        <div class="dot" style="background:#ff5f57;"></div>
+        <div class="dot" style="background:#febc2e;"></div>
+        <div class="dot" style="background:#28c840;"></div>
+        <span class="font-mono-title text-xs glow ml-2" style="letter-spacing:0.3em;">0xENIGMA</span>
+        <span class="t-label">//</span>
+        <span class="t-label">GHOST ROOM</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <template x-if="inRoom">
+          <div class="status-badge status-online">
+            <span class="status-pulse"></span>
+            <span x-text="'LIVE \u00b7 ' + (connectedCount + 1) + (isHost ? ' NODES' : ' NODES')"></span>
+          </div>
+        </template>
+        <template x-if="!inRoom">
+          <div class="t-label">NO ACTIVE SESSION</div>
+        </template>
+        <!-- Encryption indicator -->
+        <div class="flex items-center gap-1" style="opacity:0.5;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="t-label" style="font-size:9px;">E2E</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRE-ROOM SCREEN -->
+    <div x-show="!inRoom && !connecting" class="flex flex-col flex-1 items-center justify-center p-6 fade-up">
+
+      <!-- LOGO SECTION -->
+      <div class="mb-10 text-center">
+        <div class="relative inline-block">
+          <div class="font-mono-title glitch glow" data-text="GHOST ROOM" style="font-size:clamp(28px,5vw,52px); font-weight:900; letter-spacing:0.25em;">GHOST ROOM</div>
+        </div>
+        <div class="t-label mt-2" style="letter-spacing:0.3em;">EPHEMERAL \u00b7 ENCRYPTED \u00b7 UNTRACEABLE</div>
+
+        <!-- Hex decorations -->
+        <div class="flex items-center justify-center gap-2 mt-3" style="color: var(--c-text-dim); font-size:10px; letter-spacing:0.15em;">
+          <span>[ WEBRTC P2P ]</span>
+          <span>\u00b7</span>
+          <span>[ NO LOGS ]</span>
+          <span>\u00b7</span>
+          <span>[ NO DB ]</span>
+        </div>
+      </div>
+
+      <!-- PEER STATUS -->
+      <div class="mb-8 flex items-center gap-2" style="font-size:11px; color:var(--c-text-dim);">
+        <template x-if="!peerReady">
+          <div class="loading-bar w-24"></div>
+        </template>
+        <template x-if="peerReady">
+          <div class="flex items-center gap-2" style="color:var(--c-green);">
+            <span class="status-pulse"></span>
+            <span class="t-label">PEER NETWORK READY</span>
+          </div>
+        </template>
+        <template x-if="!peerReady">
+          <span class="t-label">INITIALIZING PEER NETWORK...</span>
+        </template>
+      </div>
+
+      <!-- MAIN PANEL -->
+      <div class="w-full max-w-md t-border corner-tl corner-br" style="background: var(--c-surface);">
+
+        <!-- Tab bar -->
+        <div class="flex" style="border-bottom:1px solid var(--c-border);">
+          <button
+            @click="activeTab = 'create'"
+            class="flex-1 py-3 font-mono-body transition-all"
+            style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; border: none; cursor:pointer;"
+            :style="activeTab === 'create' ? 'background: rgba(0,255,106,0.06); color: var(--c-green); border-bottom: 2px solid var(--c-green);' : 'background:transparent; color: var(--c-text-dim); border-bottom: 2px solid transparent;'"
+          >[
