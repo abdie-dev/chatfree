@@ -3,438 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BIWWDEV | 3D Portfolio</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Command Center | BIWWDEV</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Aesthetic & Professional -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Alpine.js -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
     <style>
-        /* Custom CSS - Time Travel Warp Effects & Typography */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0A0A0F;
-            overflow-x: hidden;
-        }
-        
-        h1, h2, h3, .font-display {
-            font-family: 'Space Grotesk', monospace;
-        }
-        
-        /* Scroll Snap */
-        .scroll-container {
-            scroll-snap-type: y mandatory;
-            overflow-y: scroll;
-            height: 100vh;
-            scroll-behavior: smooth;
-        }
-        
-        /* Time Travel Sections */
-        .time-section {
-            scroll-snap-align: start;
-            opacity: 0;
-            transform: scale(0.85) translateY(50px);
-            filter: blur(12px);
-            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.2);
-            will-change: transform, opacity, filter;
-        }
-        
-        .time-section.warp-active {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            filter: blur(0);
-        }
-        
-        /* Warp Flash Animation */
-        @keyframes warpFlash {
-            0% {
-                opacity: 0;
-                transform: scale(0.7) rotateX(45deg);
-                filter: blur(12px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) rotateX(0);
-                filter: blur(0);
-            }
-        }
-        
-        .warp-flash {
-            animation: warpFlash 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.2) forwards;
-        }
-        
-        /* Skill Tags Animation */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        .skill-tag {
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        .skill-tag:nth-child(even) {
-            animation-delay: 1.5s;
-        }
-        
-        /* Glassmorphism Card */
-        .glass-card {
-            background: rgba(15, 25, 35, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .glass-card:hover {
-            border-color: rgba(59, 130, 246, 0.5);
-            transform: translateY(-5px);
-        }
-        
-        /* Gradient Text */
-        .gradient-text {
-            background: linear-gradient(135deg, #60A5FA 0%, #A855F7 50%, #EC4899 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            background-size: 200% 200%;
-            animation: gradientShift 5s ease infinite;
-        }
-        
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #1A1A2E;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #3B82F6;
-            border-radius: 10px;
-        }
-        
-        /* Canvas positioning */
-        #bgCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-        
-        /* Content layer */
-        .content-layer {
-            position: relative;
-            z-index: 10;
-        }
-        
-        /* Typing cursor effect */
-        .typing-cursor::after {
-            content: '|';
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+        * { font-family: 'Inter', sans-serif; }
+        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+        body { background: #0A0A0F; }
+        .glass-panel { background: rgba(15, 25, 35, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .glass-card { background: rgba(10, 15, 25, 0.5); backdrop-filter: blur(8px); border: 1px solid rgba(59, 130, 246, 0.15); transition: all 0.2s ease; }
+        .glass-card:hover { border-color: rgba(59, 130, 246, 0.4); background: rgba(15, 25, 40, 0.6); }
+        .gradient-text { background: linear-gradient(135deg, #60A5FA, #A855F7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .progress-bar { transition: width 0.3s ease; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #1A1A2E; }
+        ::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 10px; }
+        input, textarea, select { outline: none; }
+        .habit-checkbox:checked + span { text-decoration: line-through; opacity: 0.6; }
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 5px rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 15px rgba(59,130,246,0.6); } }
+        .focus-glow:focus { animation: pulse-glow 1s infinite; border-color: #3B82F6; }
     </style>
 </head>
-<body>
+<body class="text-gray-200">
 
-<!-- Alpine.js Main Component -->
-<div x-data="portfolio()" x-init="initThree(); initObserver();" class="relative">
+<div x-data="commandCenter()" x-init="init()" class="min-h-screen p-4 md:p-6">
     
-    <!-- Canvas for Three.js -->
-    <canvas id="bgCanvas"></canvas>
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <span class="text-xl">⚡</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">COMMAND CENTER</h1>
+                    <p class="text-[10px] text-gray-400 font-mono-custom">personal dashboard • offline first</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button @click="exportData()" class="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded-lg text-sm transition flex items-center gap-2">
+                    📤 Export
+                </button>
+                <label class="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded-lg text-sm transition flex items-center gap-2 cursor-pointer">
+                    📥 Import
+                    <input type="file" @change="importData($event)" accept=".json" class="hidden">
+                </label>
+                <button @click="resetAll()" class="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded-lg text-sm transition">Reset</button>
+            </div>
+        </div>
+    </div>
     
-    <!-- Main Content Layer -->
-    <div class="content-layer relative z-10">
+    <!-- Main Grid -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        <!-- Scroll Container with Snap -->
-        <div class="scroll-container h-screen overflow-y-auto" x-ref="scrollContainer">
+        <!-- LEFT COLUMN: Weather + Time + Sholat -->
+        <div class="space-y-5">
+            <!-- Time & Date -->
+            <div class="glass-panel rounded-2xl p-5 text-center">
+                <div class="font-mono-custom text-4xl md:text-5xl font-bold tracking-wider" x-text="time"></div>
+                <div class="text-gray-400 text-sm mt-1" x-text="date"></div>
+                <div class="text-xs text-blue-400 mt-2">📍 Local time</div>
+            </div>
             
-            <!-- ==================== SECTION 1: HERO ==================== -->
-            <section x-data="{ active: false }" 
-                     x-intersect:enter="active = true; $dispatch('section-change', 'hero')" 
-                     x-intersect:leave="active = false"
-                     :class="active ? 'warp-active' : ''"
-                     class="time-section min-h-screen flex items-center justify-center px-6">
-                <div class="text-center max-w-4xl mx-auto">
-                    <div class="mb-6 inline-block">
-                        <div class="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto border border-blue-500/50">
-                            <span class="text-4xl">⚡</span>
+            <!-- Weather (Manual input, karena gratis tanpa API key) -->
+            <div class="glass-card rounded-2xl p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-400">🌤️ Weather</h3>
+                    <button @click="editWeather = !editWeather" class="text-[10px] text-gray-500 hover:text-blue-400">edit</button>
+                </div>
+                <div x-show="!editWeather">
+                    <div class="text-3xl font-bold" x-text="weather.temp + '°C'"></div>
+                    <div class="text-gray-400 text-sm" x-text="weather.condition"></div>
+                    <div class="text-xs text-gray-500 mt-2" x-text="weather.location"></div>
+                </div>
+                <div x-show="editWeather" class="space-y-2">
+                    <input type="text" x-model="weather.location" placeholder="City" class="w-full bg-black/50 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                    <input type="text" x-model="weather.temp" placeholder="Temperature" class="w-full bg-black/50 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                    <input type="text" x-model="weather.condition" placeholder="Condition" class="w-full bg-black/50 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                    <button @click="editWeather = false; saveToLocal()" class="text-xs bg-blue-600 px-3 py-1 rounded">Save</button>
+                </div>
+            </div>
+            
+            <!-- Prayer Times (Manual, bisa diganti sesuai kota) -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-400 mb-3">🕌 Jadwal Sholat</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-400">Subuh</span><span x-text="prayers.subuh"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Dzuhur</span><span x-text="prayers.dzuhur"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Ashar</span><span x-text="prayers.ashar"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Maghrib</span><span x-text="prayers.maghrib"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Isya</span><span x-text="prayers.isya"></span></div>
+                </div>
+                <button @click="editPrayers = !editPrayers" class="text-[10px] text-gray-500 hover:text-blue-400 mt-3 w-full text-center">Edit Jadwal</button>
+                <div x-show="editPrayers" class="mt-3 space-y-2">
+                    <input type="text" x-model="prayers.subuh" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-xs">
+                    <input type="text" x-model="prayers.dzuhur" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-xs">
+                    <input type="text" x-model="prayers.ashar" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-xs">
+                    <input type="text" x-model="prayers.maghrib" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-xs">
+                    <input type="text" x-model="prayers.isya" class="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-xs">
+                    <button @click="editPrayers = false; saveToLocal()" class="text-xs bg-blue-600 px-3 py-1 rounded">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MIDDLE COLUMN: Tasks + Notes -->
+        <div class="space-y-5">
+            <!-- Tasks -->
+            <div class="glass-card rounded-2xl p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-400">✅ Tasks</h3>
+                    <span class="text-xs text-gray-500" x-text="tasks.filter(t => !t.done).length + ' remaining'"></span>
+                </div>
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    <template x-for="(task, idx) in tasks" :key="idx">
+                        <div class="flex items-center gap-2 group">
+                            <input type="checkbox" x-model="task.done" @change="saveToLocal()" class="w-4 h-4 rounded border-gray-600 bg-transparent accent-blue-500">
+                            <span :class="task.done ? 'line-through text-gray-500' : 'text-gray-300'" class="flex-1 text-sm" x-text="task.text"></span>
+                            <button @click="deleteTask(idx)" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition">✖</button>
                         </div>
-                    </div>
-                    <h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-4">
-                        <span class="gradient-text">BIWWDEV</span>
-                    </h1>
-                    <div class="text-xl md:text-2xl text-slate-300 mb-6 font-light">
-                        <span class="typing-cursor">Unlimited Skill • Infinite Creation</span>
-                    </div>
-                    <p class="text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
-                        Pushing boundaries beyond limits. Creating digital experiences that transcend reality.
-                    </p>
-                    <div class="mt-8 flex gap-4 justify-center">
-                        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                        <div class="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style="animation-delay: 0.2s"></div>
-                        <div class="w-2 h-2 rounded-full bg-pink-500 animate-pulse" style="animation-delay: 0.4s"></div>
-                    </div>
+                    </template>
+                    <div x-show="tasks.length === 0" class="text-gray-500 text-sm text-center py-4">No tasks. Add one below.</div>
                 </div>
-            </section>
-            
-            <!-- ==================== SECTION 2: EDUCATION ==================== -->
-            <section x-data="{ active: false }" 
-                     x-intersect:enter="active = true; $dispatch('section-change', 'education')" 
-                     x-intersect:leave="active = false"
-                     :class="active ? 'warp-active' : ''"
-                     class="time-section min-h-screen flex items-center justify-center px-6">
-                <div class="text-center max-w-3xl mx-auto">
-                    <p class="text-xs uppercase tracking-[0.3em] text-blue-400 mb-4 font-semibold">Education</p>
-                    <h2 class="text-4xl md:text-7xl font-bold text-white mb-6">SMKN 1 CIANJUR</h2>
-                    <div class="w-24 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-8"></div>
-                    <p class="text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed">
-                        Mengasah skill dan kreativitas di bidang teknologi, 
-                        membangun fondasi yang kuat untuk masa depan digital.
-                    </p>
-                    <div class="mt-10 flex justify-center gap-3 flex-wrap">
-                        <span class="px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full text-sm text-blue-300">🎓 2024</span>
-                        <span class="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm text-purple-300">⚡ RPL</span>
-                        <span class="px-4 py-2 bg-pink-500/10 border border-pink-500/30 rounded-full text-sm text-pink-300">🚀 Berprestasi</span>
-                    </div>
+                <div class="mt-3 flex gap-2">
+                    <input type="text" x-model="newTask" @keyup.enter="addTask()" placeholder="New task..." class="flex-1 bg-black/50 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-blue-500">
+                    <button @click="addTask()" class="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/50 rounded-lg text-sm">+</button>
                 </div>
-            </section>
+            </div>
             
-            <!-- ==================== SECTION 3: UNLIMITED SKILLS ==================== -->
-            <section x-data="{ active: false }" 
-                     x-intersect:enter="active = true; $dispatch('section-change', 'skills')" 
-                     x-intersect:leave="active = false"
-                     :class="active ? 'warp-active' : ''"
-                     class="time-section min-h-screen flex items-center justify-center px-6">
-                <div class="text-center max-w-5xl mx-auto">
-                    <div class="text-8xl md:text-9xl mb-6 opacity-80">∞</div>
-                    <h2 class="text-3xl md:text-5xl font-bold gradient-text mb-8">SKILLS: UNLIMITED</h2>
-                    <p class="text-slate-400 mb-10 max-w-2xl mx-auto">
-                        Tidak terbatas, terus berkembang, dan selalu belajar hal baru.
-                        Setiap hari adalah kesempatan untuk menguasai teknologi baru.
-                    </p>
-                    <div class="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
-                        <template x-for="(skill, idx) in skills" :key="idx">
-                            <span class="skill-tag px-5 py-2.5 bg-white/5 border border-blue-500/30 rounded-full text-sm text-slate-300 hover:border-blue-500 transition-all duration-300 cursor-pointer"
-                                  :style="`animation-delay: ${idx * 0.1}s`">
-                                ◉ <span x-text="skill"></span>
-                            </span>
-                        </template>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- ==================== SECTION 4: PROJECTS ==================== -->
-            <section x-data="{ active: false }" 
-                     x-intersect:enter="active = true; $dispatch('section-change', 'projects')" 
-                     x-intersect:leave="active = false"
-                     :class="active ? 'warp-active' : ''"
-                     class="time-section min-h-screen flex items-center justify-center px-6 py-20">
-                <div class="max-w-6xl mx-auto">
-                    <h2 class="text-3xl md:text-5xl font-bold text-center mb-4 gradient-text">Featured Works</h2>
-                    <p class="text-slate-400 text-center mb-12">Beberapa project yang pernah dibuat</p>
-                    
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <template x-for="(project, idx) in projects" :key="idx">
-                            <div class="glass-card rounded-2xl p-6 cursor-pointer group">
-                                <div class="text-4xl mb-4" x-text="project.icon"></div>
-                                <h3 class="text-xl font-bold text-white mb-2" x-text="project.title"></h3>
-                                <p class="text-slate-400 text-sm mb-4" x-text="project.desc"></p>
-                                <div class="flex gap-2 flex-wrap">
-                                    <template x-for="tech in project.tech">
-                                        <span class="text-[10px] px-2 py-1 bg-blue-500/20 rounded-full text-blue-300" x-text="tech"></span>
-                                    </template>
-                                </div>
+            <!-- Notes -->
+            <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-400 mb-3">📝 Notes</h3>
+                <div class="space-y-3 max-h-80 overflow-y-auto">
+                    <template x-for="(note, idx) in notes" :key="idx">
+                        <div class="group bg-black/30 rounded-lg p-3">
+                            <div class="flex justify-between items-start">
+                                <input type="text" x-model="note.title" @blur="saveToLocal()" class="bg-transparent font-semibold text-sm w-full focus:outline-none border-b border-transparent focus:border-blue-500" placeholder="Title">
+                                <button @click="deleteNote(idx)" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition ml-2">✖</button>
                             </div>
-                        </template>
-                    </div>
+                            <textarea x-model="note.content" @blur="saveToLocal()" rows="2" class="w-full bg-transparent text-xs text-gray-400 mt-1 focus:outline-none resize-none" placeholder="Write something..."></textarea>
+                        </div>
+                    </template>
+                    <button @click="addNote()" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-xs text-gray-500 hover:text-blue-400 hover:border-blue-500 transition">+ New Note</button>
                 </div>
-            </section>
-            
-            <!-- ==================== SECTION 5: CONTACT ==================== -->
-            <section x-data="{ active: false }" 
-                     x-intersect:enter="active = true; $dispatch('section-change', 'contact')" 
-                     x-intersect:leave="active = false"
-                     :class="active ? 'warp-active' : ''"
-                     class="time-section min-h-screen flex items-center justify-center px-6">
-                <div class="text-center max-w-2xl mx-auto">
-                    <div class="text-6xl mb-6">🚀</div>
-                    <h2 class="text-3xl md:text-5xl font-bold mb-6 gradient-text">Let's Create Together</h2>
-                    <p class="text-slate-300 mb-8 leading-relaxed">
-                        Punya project menarik? Butuh developer dengan skill unlimited? 
-                        Siap berkolaborasi dan menciptakan sesuatu yang luar biasa.
-                    </p>
-                    
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="#" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-full text-white font-medium transition-all duration-300 shadow-lg shadow-blue-500/25">
-                            📧 biwwdev@works.id
-                        </a>
-                        <a href="#" class="px-8 py-3 bg-white/5 hover:bg-white/10 border border-blue-500/30 rounded-full text-slate-300 font-medium transition-all duration-300">
-                            💬 Discord: biwwdev
-                        </a>
-                    </div>
-                    
-                    <div class="mt-12 pt-8 border-t border-white/10">
-                        <p class="text-slate-500 text-sm">© 2026 BIWWDEV • Unlimited Power</p>
-                    </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT COLUMN: Habits + Quote -->
+        <div class="space-y-5">
+            <!-- Habits Tracker -->
+            <div class="glass-card rounded-2xl p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-400">📊 Habits</h3>
+                    <span class="text-xs text-gray-500" x-text="Math.round((habits.filter(h => h.done).length / (habits.length || 1)) * 100) + '%'"></span>
                 </div>
-            </section>
+                <div class="w-full bg-gray-800 rounded-full h-1.5 mb-4">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full progress-bar" :style="{ width: (habits.filter(h => h.done).length / (habits.length || 1)) * 100 + '%' }"></div>
+                </div>
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    <template x-for="(habit, idx) in habits" :key="idx">
+                        <div class="flex items-center gap-2 group">
+                            <input type="checkbox" x-model="habit.done" @change="saveToLocal()" class="w-4 h-4 rounded border-gray-600 accent-purple-500">
+                            <span :class="habit.done ? 'line-through text-gray-500' : 'text-gray-300'" class="flex-1 text-sm" x-text="habit.name"></span>
+                            <span class="text-[9px] text-gray-600" x-text="habit.streak + 'd'"></span>
+                            <button @click="deleteHabit(idx)" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition">✖</button>
+                        </div>
+                    </template>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <input type="text" x-model="newHabit" @keyup.enter="addHabit()" placeholder="New habit..." class="flex-1 bg-black/50 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                    <button @click="addHabit()" class="px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 rounded-lg text-sm">+</button>
+                </div>
+            </div>
             
+            <!-- Daily Quote -->
+            <div class="glass-card rounded-2xl p-5 text-center">
+                <div class="text-2xl mb-2">✨</div>
+                <p class="text-sm italic text-gray-300" x-text="quote.text"></p>
+                <p class="text-[10px] text-gray-500 mt-2" x-text="'- ' + quote.author"></p>
+                <button @click="refreshQuote()" class="text-[10px] text-blue-500 hover:text-blue-400 mt-3">↻ refresh</button>
+            </div>
+            
+            <!-- Storage Info -->
+            <div class="glass-card rounded-2xl p-3 text-center text-[10px] text-gray-600">
+                💾 Data tersimpan di lokal browser • Last backup: <span x-text="lastBackup || 'never'"></span>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-function portfolio() {
+function commandCenter() {
     return {
-        // State
-        skills: ['JavaScript', 'Python', 'React.js', 'Node.js', 'Three.js', 'Tailwind', 'Alpine.js', 'WebGL', 'TypeScript', 'Next.js', 'Vue.js', 'PHP', 'Laravel', 'MongoDB', 'Firebase', 'Docker', 'Git', 'UI/UX Design', 'Animation', 'AI Integration'],
+        // Time
+        time: '',
+        date: '',
         
-        projects: [
-            { icon: '🎮', title: '3D Interactive World', desc: 'Pengalaman interaktif 3D dengan Three.js', tech: ['Three.js', 'WebGL', 'GSAP'] },
-            { icon: '💬', title: 'Ghost Chat P2P', desc: 'Aplikasi chat private end-to-end tanpa server', tech: ['PeerJS', 'WebRTC', 'Alpine'] },
-            { icon: '🎨', title: 'Creative Portfolio', desc: 'Portfolio dengan animasi scroll time travel', tech: ['Tailwind', 'Three.js', 'Alpine'] },
-            { icon: '📱', title: 'Mobile App', desc: 'Aplikasi mobile hybrid dengan performa tinggi', tech: ['React Native', 'Firebase', 'Redux'] },
-            { icon: '⚡', title: 'Real-time Dashboard', desc: 'Dashboard analytics real-time', tech: ['Node.js', 'Socket.io', 'Chart.js'] },
-            { icon: '🔒', title: 'Security Tools', desc: 'Tools untuk penetration testing', tech: ['Python', 'Bash', 'Crypto'] }
+        // Weather
+        weather: { location: 'Cianjur', temp: '28', condition: 'Cloudy' },
+        editWeather: false,
+        
+        // Prayers
+        prayers: { subuh: '04:30', dzuhur: '12:00', ashar: '15:30', maghrib: '18:00', isya: '19:15' },
+        editPrayers: false,
+        
+        // Tasks
+        tasks: [],
+        newTask: '',
+        
+        // Notes
+        notes: [],
+        
+        // Habits
+        habits: [],
+        newHabit: '',
+        
+        // Quote
+        quote: { text: 'The only limit is your imagination.', author: 'Unknown' },
+        quotesDB: [
+            { text: 'Konsistensi lebih penting dari intensitas.', author: 'Atomic Habits' },
+            { text: 'Start where you are. Use what you have. Do what you can.', author: 'Arthur Ashe' },
+            { text: 'Small daily improvements are the key to staggering long-term results.', author: 'Unknown' },
+            { text: 'Discipline is choosing what you want most over what you want now.', author: 'Unknown' },
+            { text: 'Jangan menyerah. Momen tersulit seringkali menjadi awal dari kesuksesan.', author: 'BIWWDEV' }
         ],
         
-        // Three.js references
-        scene: null,
-        camera: null,
-        renderer: null,
-        cube: null,
-        particles: null,
-        mouseX: 0,
-        mouseY: 0,
-        targetRotX: 0,
-        targetRotY: 0,
+        lastBackup: null,
         
-        // Scroll Observer
-        observer: null,
+        init() {
+            this.loadFromLocal();
+            this.updateTime();
+            setInterval(() => this.updateTime(), 1000);
+            this.refreshQuote();
+        },
         
-        initThree() {
-            // Setup scene with transparent background
-            this.scene = new THREE.Scene();
-            this.scene.background = null;
-            
-            // Camera
-            this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.camera.position.set(0, 0, 6);
-            
-            // Renderer with transparency
-            this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setClearColor(0x000000, 0);
-            document.getElementById('bgCanvas').appendChild(this.renderer.domElement);
-            
-            // Create Transparent Blue Cubic
-            const geometry = new THREE.BoxGeometry(2.2, 2.2, 2.2);
-            const material = new THREE.MeshStandardMaterial({
-                color: 0x3b82f6,
-                emissive: 0x1e3a8a,
-                transparent: true,
-                opacity: 0.3,
-                metalness: 0.8,
-                roughness: 0.2,
-                emissiveIntensity: 0.6
-            });
-            this.cube = new THREE.Mesh(geometry, material);
-            
-            // Add wireframe edges
-            const edgesGeo = new THREE.EdgesGeometry(geometry);
-            const edgesMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-            const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
-            this.cube.add(wireframe);
-            
-            // Inner smaller cube for depth
-            const innerGeo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
-            const innerMat = new THREE.MeshStandardMaterial({
-                color: 0x8b5cf6,
-                emissive: 0x4c1d95,
-                transparent: true,
-                opacity: 0.4,
-                wireframe: true
-            });
-            const innerCube = new THREE.Mesh(innerGeo, innerMat);
-            this.cube.add(innerCube);
-            
-            this.scene.add(this.cube);
-            
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404060);
-            const pointLight1 = new THREE.PointLight(0xffffff, 1);
-            pointLight1.position.set(3, 3, 4);
-            const pointLight2 = new THREE.PointLight(0x3b82f6, 0.5);
-            pointLight2.position.set(-2, 1, 3);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(1, 2, 1);
-            
-            this.scene.add(ambientLight, pointLight1, pointLight2, directionalLight);
-            
-            // Particle system (floating stars)
-            const particleCount = 1200;
-            const particlesGeo = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            
-            for (let i = 0; i < particleCount; i++) {
-                // Spread particles in a sphere-like volume
-                positions[i*3] = (Math.random() - 0.5) * 25;
-                positions[i*3+1] = (Math.random() - 0.5) * 15;
-                positions[i*3+2] = (Math.random() - 0.5) * 20 - 5;
-                
-                // Colors: blue, purple, cyan variations
-                const colorChoice = Math.random();
-                if (colorChoice < 0.33) {
-                    colors[i*3] = 0.2;
-                    colors[i*3+1] = 0.5;
-                    colors[i*3+2] = 1;
-                } else if (colorChoice < 0.66) {
-                    colors[i*3] = 0.6;
-                    colors[i*3+1] = 0.3;
-                    colors[i*3+2] = 1;
-                } else {
-                    colors[i*3] = 0.3;
-                    colors[i*3+1] = 0.8;
-                    colors[i*3+2] = 1;
-                }
+        updateTime() {
+            const now = new Date();
+            this.time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            this.date = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        },
+        
+        addTask() {
+            if (this.newTask.trim()) {
+                this.tasks.push({ text: this.newTask.trim(), done: false });
+                this.newTask = '';
+                this.saveToLocal();
             }
-            particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            
-            const particlesMat = new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.6 });
-            this.particles = new THREE.Points(particlesGeo, particlesMat);
-            this.scene.add(this.particles);
-            
-            // Mouse move handler
-            window.addEventListener('mousemove', (e) => {
-                this.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-  
+        },
+        
+        deleteTask(idx) {
+            this.tasks.splice(idx, 1);
+            this.saveToLocal();
+        },
+        
+        addNote() {
+            this.notes.push({ title: 'New Note', content: '' });
+            this.saveToLocal();
+        },
+        
+        deleteNote(idx) {
+            this.notes.splice(idx, 1);
+            this.saveToLocal();
+        },
+        
+        addHabit() {
+            if (this.newHabit.trim()) {
+                this.habits.push({ name: this.newHabit.trim(), done: false, streak: 0 });
+                this.newHabit = '';
+                this.saveToLocal();
+            }
+        },
+        
+        deleteHabit(idx) {
+            this.habits.splice(idx, 1);
+            this.saveToLocal();
+        },
+        
+        refreshQuote() {
+            const random = Math.floor(Math.random() * this.quotesDB.length);
+            this.quote = this.quotesDB[random];
+        },
+        
+        saveToLocal() {
+            const data = {
+                weather: this.weather,
+                prayers: this.prayers,
+                tasks: this.tasks,
+                notes: this.notes,
+                habits: this.habits
+            };
+            localStorage.setItem('commandCenter', JSON.stringify(data));
+            this.lastBackup = new Date().toLocaleString();
+        },
+        
+        loadFromLocal() {
+            const saved = localStorage.getItem('commandCenter');
+            if (saved) {
+                const data = JSON.parse(saved);
+                this.weather = data.weather || this.weather;
+                this.prayers = data.prayers || this.prayers;
+                this.tasks = data.tasks || [];
+                this.notes = data.notes || [];
+                this.habits = data.habits || [];
+                this.lastBackup = new Date().toLocaleString();
+            } else {
+                // Default demo data
+                this.tasks = [
+                    { text: 'Check dashboard', done: false },
+                    { text: 'Review project', done: false }
+                ];
+                this.notes = [
+                    { title: 'Welcome', content: 'Command center siap digunakan. Semua data tersimpan di browser.' }
+                ];
+                this.habits = [
+                    { name: 'Bangun pagi', done: false, streak: 0 },
+                    { name: 'Olahraga', done: false, streak: 0 },
+                    { name: 'Belajar coding', done: false, streak: 0 }
+                ];
+            }
+        },
+        
+        exportData() {
+            const data = {
+                weather: this.weather,
+                prayers: this.prayers,
+                tasks: this.tasks,
+                notes: this.notes,
+                habits: this.habits,
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `command-center-backup-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+        
+        importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    this.weather = data.weather || this.weather;
+                    this.prayers = data.prayers || this.prayers;
+                    this.tasks = data.tasks || [];
+                    this.notes = data.notes || [];
+                    this.habits = data.habits || [];
+                    this.saveToLocal();
+                    alert('Import successful!');
+                } catch (err) {
+                    alert('Invalid file');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+      
